@@ -1,0 +1,7 @@
+Ignora credenciais do Firebase
+
+frontend/js/config.js
+
+Outros arquivos sensíveis
+
+node_modules/ .env *.log

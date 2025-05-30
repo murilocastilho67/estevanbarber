@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estevan Barber - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { firebaseConfig } from './js/config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.auth = auth;
+        window.db = db;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Estevan Barber</h1>
+        <div class="form-container">
+            <form id="loginForm">
+                <h2>Login</h2>
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" name="email" required>
+                <label for="password">Senha:</label>
+                <div class="password-container">
+                    <input type="password" id="password" name="password" required>
+                    <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+                </div>
+                <div id="loginError" class="error-message"></div>
+                <button type="submit">Entrar</button>
+                <p>Não tem conta? <a href="#" id="showRegister">Cadastre-se</a></p>
+                <p>Esqueceu a senha? <a href="#" id="resetPassword">Redefinir senha</a></p>
+            </form>
+            <form id="registerForm" style="display: none;">
+                <h2>Cadastro</h2>
+                <label for="name">Nome:</label>
+                <input type="text" id="name" name="name" required>
+                <label for="phone">Telefone:</label>
+                <input type="tel" id="phone" name="phone" required>
+                <label for="reg-email">E-mail:</label>
+                <input type="email" id="reg-email" name="reg-email" required>
+                <label for="reg-password">Senha:</label>
+                <div class="password-container">
+                    <input type="password" id="reg-password" name="reg-password" required>
+                    <span class="toggle-password" onclick="togglePassword('reg-password')">👁️</span>
+                </div>
+                <div id="registerError" class="error-message"></div>
+                <button type="submit">Cadastrar</button>
+                <p>Já tem conta? <a href="#" id="showLogin">Fazer login</a></p>
+            </form>
+        </div>
+    </div>
+    <script type="module" src="js/login.js"></script>
+    <script>
+        function togglePassword(fieldId) {
+            const input = document.getElementById(fieldId);
+            const icon = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>

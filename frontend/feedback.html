@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estevan Barber - Feedback</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { firebaseConfig } from './js/config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Estevan Barber</h1>
+        <h2>Deixe seu feedback</h2>
+        <form id="feedbackForm">
+            <label for="rating">Avaliação:</label>
+            <select id="rating" name="rating" required>
+                <option value="5">5 estrelas</option>
+                <option value="4">4 estrelas</option>
+                <option value="3">3 estrelas</option>
+                <option value="2">2 estrelas</option>
+                <option value="1">1 estrela</option>
+            </select>
+            <label for="comment">Comentários:</label>
+            <textarea id="comment" name="comment" rows="5"></textarea>
+            <button type="submit">Enviar feedback</button>
+        </form>
+    </div>
+    <script type="module" src="js/feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estevan Barber - Confirmação</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { firebaseConfig } from './js/config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Estevan Barber</h1>
+        <h2>Confirme seu agendamento</h2>
+        <div id="summary">
+            <p><strong>Nome:</strong> <span id="clientName"></span></p>
+            <p><strong>Barbeiro:</strong> <span id="barberName"></span></p>
+            <p><strong>Serviços:</strong> <span id="services"></span></p>
+            <p><strong>Data:</strong> <span id="date"></span></p>
+            <p><strong>Horário:</strong> <span id="time"></span></p>
+            <p><strong>Total:</strong> R$<span id="total"></span></p>
+        </div>
+        <button id="confirm">Confirmar agendamento</button>
+        <button id="review">Revisar agendamento</button>
+    </div>
+    <script type="module" src="js/confirmation.js"></script>
+</body>
+</html>

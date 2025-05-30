@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estevan Barber - Painel do Gerente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="module">
+        import { firebaseConfig } from './js/config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Estevan Barber</h1>
+        <h2>Painel do Gerente</h2>
+
+        <!-- Seção de Agendamentos -->
+        <h3>Agendamentos</h3>
+        <div class="filter">
+            <label for="barberFilter">Barbeiro:</label>
+            <select id="barberFilter" name="barberFilter">
+                <option value="all">Todos</option>
+            </select>
+            <label for="dateFilter">Data:</label>
+            <input type="date" id="dateFilter">
+        </div>
+        <table id="appointmentsList">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Serviços</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="summary">
+            <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
+            <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
+        </div>
+
+        <!-- Seção de Serviços -->
+        <h3>Gerenciar Serviços</h3>
+        <form id="serviceForm">
+            <label for="serviceBarber">Barbeiro:</label>
+            <select id="serviceBarber" name="serviceBarber"></select>
+            <label for="serviceName">Nome do Serviço:</label>
+            <input type="text" id="serviceName" name="serviceName" required>
+            <label for="servicePrice">Preço (R$):</label>
+            <input type="number" id="servicePrice" name="servicePrice" step="0.01" required>
+            <label for="serviceDuration">Duração (min):</label>
+            <input type="number" id="serviceDuration" name="serviceDuration" required>
+            <button type="submit">Adicionar/Editar Serviço</button>
+        </form>
+        <div id="servicesList"></div>
+
+        <!-- Seção de Barbeiros -->
+        <h3>Gerenciar Barbeiros</h3>
+        <form id="barberForm">
+            <label for="barberName">Nome do Barbeiro:</label>
+            <input type="text" id="barberName" name="barberName" required>
+            <button type="submit">Adicionar Barbeiro</button>
+        </form>
+        <div id="barbersList"></div>
+
+        <!-- Seção de Horários -->
+        <h3>Gerenciar Horários</h3>
+        <form id="scheduleForm">
+            <label for="dayOfWeek">Dia da Semana:</label>
+            <select id="dayOfWeek" name="dayOfWeek">
+                <option value="Monday">Segunda</option>
+                <option value="Tuesday">Terça</option>
+                <option value="Wednesday">Quarta</option>
+                <option value="Thursday">Quinta</option>
+                <option value="Friday">Sexta</option>
+                <option value="Saturday">Sábado</option>
+            </select>
+            <label for="startTime">Início:</label>
+            <input type="time" id="startTime" name="startTime" required>
+            <label for="endTime">Fim:</label>
+            <input type="time" id="endTime" name="endTime" required>
+            <label for="breakStart">Pausa - Início:</label>
+            <input type="time" id="breakStart" name="breakStart">
+            <label for="breakEnd">Pausa - Fim:</label>
+            <input type="time" id="breakEnd" name="breakEnd">
+            <button type="submit">Salvar Horários</button>
+        </form>
+        <table id="schedulesList">
+            <thead>
+                <tr>
+                    <th>Dia</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Pausa</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button id="logout">Sair</button>
+    </div>
+    <script type="module" src="js/manager.js"></script>
+</body>
+</html>
