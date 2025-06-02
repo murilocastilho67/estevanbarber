@@ -5,34 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Feedback</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Firebase SDK Modular -->
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         window.db = db;
+        window.auth = auth;
     </script>
 </head>
-<body>
+<body class="centered">
     <div class="container">
         <h1>Estevan Barber</h1>
-        <h2>Deixe seu feedback</h2>
+        <h2>Avalie seu atendimento</h2>
+        <div id="appointmentInfo">
+            <p><strong>Barbeiro:</strong> <span id="barberName"></span></p>
+            <p><strong>Serviços:</strong> <span id="services"></span></p>
+            <p><strong>Data:</strong> <span id="date"></span></p>
+            <p><strong>Horário:</strong> <span id="time"></span></p>
+        </div>
         <form id="feedbackForm">
-            <label for="rating">Avaliação:</label>
+            <label for="rating">Avaliação (1 a 5):</label>
             <select id="rating" name="rating" required>
-                <option value="5">5 estrelas</option>
-                <option value="4">4 estrelas</option>
-                <option value="3">3 estrelas</option>
-                <option value="2">2 estrelas</option>
-                <option value="1">1 estrela</option>
+                <option value="1">1 - Ruim</option>
+                <option value="2">2 - Regular</option>
+                <option value="3">3 - Bom</option>
+                <option value="4">4 - Muito Bom</option>
+                <option value="5">5 - Excelente</option>
             </select>
-            <label for="comment">Comentários:</label>
-            <textarea id="comment" name="comment" rows="5"></textarea>
-            <button type="submit">Enviar feedback</button>
+            <label for="comment">Comentário:</label>
+            <textarea id="comment" name="comment" rows="4"></textarea>
+            <button type="submit">Enviar Feedback</button>
         </form>
+        <button id="backToServices">Voltar aos Serviços</button>
+        <div id="feedbackPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <p id="popupMessage"></p>
+                <button id="closePopup">Fechar</button>
+            </div>
+        </div>
     </div>
     <script type="module" src="js/feedback.js"></script>
 </body>

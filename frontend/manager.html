@@ -5,110 +5,204 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Painel do Gerente</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilo do pop-up personalizado */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 80%;
+            border: 2px solid #d4af37;
+        }
+        .popup h3 {
+            margin: 0 0 10px;
+            color: #d4af37;
+            font-size: 1.5em;
+        }
+        .popup p {
+            margin: 0 0 20px;
+            font-size: 1em;
+        }
+        .popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .popup-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        .popup-button.confirm {
+            background: #d4af37;
+            color: #1a1a1a;
+        }
+        .popup-button.confirm:hover {
+            background: #b8972e;
+        }
+        .popup-button.cancel {
+            background: #555;
+            color: #fff;
+        }
+        .popup-button.cancel:hover {
+            background: #444;
+        }
+    </style>
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         window.db = db;
+        window.auth = auth;
     </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Estevan Barber</h1>
-        <h2>Painel do Gerente</h2>
-
-        <!-- Seção de Agendamentos -->
-        <h3>Agendamentos</h3>
-        <div class="filter">
-            <label for="barberFilter">Barbeiro:</label>
-            <select id="barberFilter" name="barberFilter">
-                <option value="all">Todos</option>
-            </select>
-            <label for="dateFilter">Data:</label>
-            <input type="date" id="dateFilter">
-        </div>
-        <table id="appointmentsList">
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Serviços</th>
-                    <th>Data</th>
-                    <th>Horário</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <div class="summary">
-            <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
-            <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
-        </div>
-
-        <!-- Seção de Serviços -->
-        <h3>Gerenciar Serviços</h3>
-        <form id="serviceForm">
-            <label for="serviceBarber">Barbeiro:</label>
-            <select id="serviceBarber" name="serviceBarber"></select>
-            <label for="serviceName">Nome do Serviço:</label>
-            <input type="text" id="serviceName" name="serviceName" required>
-            <label for="servicePrice">Preço (R$):</label>
-            <input type="number" id="servicePrice" name="servicePrice" step="0.01" required>
-            <label for="serviceDuration">Duração (min):</label>
-            <input type="number" id="serviceDuration" name="serviceDuration" required>
-            <button type="submit">Adicionar/Editar Serviço</button>
-        </form>
-        <div id="servicesList"></div>
-
-        <!-- Seção de Barbeiros -->
-        <h3>Gerenciar Barbeiros</h3>
-        <form id="barberForm">
-            <label for="barberName">Nome do Barbeiro:</label>
-            <input type="text" id="barberName" name="barberName" required>
-            <button type="submit">Adicionar Barbeiro</button>
-        </form>
-        <div id="barbersList"></div>
-
-        <!-- Seção de Horários -->
-        <h3>Gerenciar Horários</h3>
-        <form id="scheduleForm">
-            <label for="dayOfWeek">Dia da Semana:</label>
-            <select id="dayOfWeek" name="dayOfWeek">
-                <option value="Monday">Segunda</option>
-                <option value="Tuesday">Terça</option>
-                <option value="Wednesday">Quarta</option>
-                <option value="Thursday">Quinta</option>
-                <option value="Friday">Sexta</option>
-                <option value="Saturday">Sábado</option>
-            </select>
-            <label for="startTime">Início:</label>
-            <input type="time" id="startTime" name="startTime" required>
-            <label for="endTime">Fim:</label>
-            <input type="time" id="endTime" name="endTime" required>
-            <label for="breakStart">Pausa - Início:</label>
-            <input type="time" id="breakStart" name="breakStart">
-            <label for="breakEnd">Pausa - Fim:</label>
-            <input type="time" id="breakEnd" name="breakEnd">
-            <button type="submit">Salvar Horários</button>
-        </form>
-        <table id="schedulesList">
-            <thead>
-                <tr>
-                    <th>Dia</th>
-                    <th>Início</th>
-                    <th>Fim</th>
-                    <th>Pausa</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-
-        <button id="logout">Sair</button>
+<body class="manager-layout">
+    <div class="sidebar">
+        <h2>Estevan Barber</h2>
+        <nav>
+            <a href="#" id="nav-barbers" class="active">Barbeiros</a>
+            <a href="#" id="nav-appointments">Agendamentos</a>
+            <a href="#" id="nav-services">Serviços</a>
+            <a href="#" id="nav-schedules">Horários</a>
+            <a href="#" id="nav-logout">Sair</a>
+        </nav>
     </div>
-    <script type="module" src="js/manager.js"></script>
+    <div class="main-content">
+        <div id="barbers-section" class="section active">
+            <h2>Gerenciar Barbeiros</h2>
+            <form id="barberForm">
+                <label for="barberName">Nome do Barbeiro:</label>
+                <input type="text" id="barberName" name="barberName" required>
+                <button type="submit">Adicionar Barbeiro</button>
+            </form>
+            <div id="barbersList"></div>
+        </div>
+
+        <div id="appointments-section" class="section">
+            <h2>Agendamentos</h2>
+            <div class="filter">
+                <label for="barberFilter">Barbeiro:</label>
+                <select id="barberFilter" name="barberFilter">
+                    <option value="all">Todos</option>
+                </select>
+                <label for="dateFilter">Data:</label>
+                <input type="date" id="dateFilter">
+            </div>
+            <table id="appointmentsList">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Barbeiro</th>
+                        <th>Serviços</th>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Feedback</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="summary">
+                <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
+                <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
+            </div>
+        </div>
+
+        <div id="services-section" class="section">
+            <h2>Gerenciar Serviços</h2>
+            <form id="serviceForm">
+                <label for="serviceBarber">Barbeiro:</label>
+                <select id="serviceBarber" name="serviceBarber"></select>
+                <label for="serviceName">Nome do Serviço:</label>
+                <input type="text" id="serviceName" name="serviceName" required>
+                <label for="servicePrice">Preço (R$):</label>
+                <input type="number" id="servicePrice" name="servicePrice" step="0.01" required>
+                <label for="serviceDuration">Duração (min):</label>
+                <input type="number" id="serviceDuration" name="serviceDuration" required>
+                <button type="submit">Adicionar/Editar Serviço</button>
+            </form>
+            <div id="servicesList"></div>
+        </div>
+
+        <div id="schedules-section" class="section">
+            <h2>Gerenciar Horários</h2>
+            <button id="setupSchedules" class="action-btn">Cadastrar Horários Padrão</button>
+            <form id="scheduleForm">
+                <input type="hidden" id="scheduleId" name="scheduleId">
+                <label for="scheduleBarber">Barbeiro:</label>
+                <select id="scheduleBarber" name="scheduleBarber" required></select>
+                <label for="dayOfWeek">Dia da Semana:</label>
+                <select id="dayOfWeek" name="dayOfWeek" required>
+                    <option value="Segunda">Segunda</option>
+                    <option value="Terça">Terça</option>
+                    <option value="Quarta">Quarta</option>
+                    <option value="Quinta">Quinta</option>
+                    <option value="Sexta">Sexta</option>
+                    <option value="Sábado">Sábado</option>
+                </select>
+                <label for="startTime">Início:</label>
+                <input type="time" id="startTime" name="startTime" required>
+                <label for="endTime">Fim:</label>
+                <input type="time" id="endTime" name="endTime" required>
+                <label for="breakStart">Pausa - Início:</label>
+                <input type="time" id="breakStart" name="breakStart">
+                <label for="breakEnd">Pausa - Fim:</label>
+                <input type="time" id="breakEnd" name="breakEnd">
+                <button type="submit">Salvar Horários</button>
+            </form>
+            <table id="schedulesList">
+                <thead>
+                    <tr>
+                        <th>Dia</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Pausa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pop-up personalizado -->
+    <div class="popup-overlay" id="customPopup">
+        <div class="popup">
+            <h3 id="popupTitle">Estevan Barber</h3>
+            <p id="popupMessage"></p>
+            <div class="popup-buttons">
+                <button class="popup-button confirm" id="popupConfirm">OK</button>
+                <button class="popup-button cancel" id="popupCancel" style="display: none;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/manager_new.js"></script>
 </body>
 </html>

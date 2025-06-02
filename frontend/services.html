@@ -3,38 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estevan Barber - Serviços</title>
+    <title>Estevan Barber - Agendamento</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Firebase SDK Modular -->
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         window.db = db;
+        window.auth = auth;
     </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Estevan Barber</h1>
-        <h2>Escolha seu barbeiro e serviços</h2>
-        <label for="barber">Barbeiro:</label>
-        <select id="barber" name="barber"></select>
-        <h3>Serviços</h3>
-        <div id="servicesList"></div>
-        <div class="summary">
-            <p>Total: R$<span id="totalPrice">0.00</span></p>
-            <p>Tempo estimado: <span id="totalTime">0</span> min</p>
-        </div>
-        <button id="chooseSchedule" disabled>Escolher horário</button>
-        <div id="calendar" style="display: none;">
-            <h3>Selecione o dia</h3>
-            <input type="date" id="date">
-            <h3>Horários disponíveis</h3>
-            <div id="timeSlots"></div>
+<body class="manager-layout">
+    <div class="sidebar">
+        <h2>Estevan Barber</h2>
+        <nav>
+            <a href="#" id="newAppointmentLink" class="active">Novo Agendamento</a>
+            <a href="#" id="viewAppointmentsLink">Meus Agendamentos</a>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div id="appointmentForm" class="section active">
+            <h2>Novo Agendamento</h2>
+            <label for="barber">Selecione o Barbeiro:</label>
+            <select id="barber" name="barber"></select>
+            <div class="services-container">
+                <h3>Serviços Disponíveis</h3>
+                <div id="servicesList"></div>
+                <div class="totals">
+                    <p>Total: R$<span id="totalPrice">0.00</span></p>
+                    <p>Tempo Estimado: <span id="totalTime">0</span> minutos</p>
+                </div>
+            </div>
+            <button id="chooseSchedule">Escolher Horário</button>
+            <div id="calendar">
+                <label for="date">Selecione a Data:</label>
+                <input type="date" id="date" name="date">
+                <div id="timeSlots"></div>
+            </div>
             <button id="next">Avançar</button>
+        </div>
+        <div id="appointmentsSection" class="section">
+            <h2>Meus Agendamentos</h2>
+            <table id="appointmentsTable">
+                <thead>
+                    <tr>
+                        <th>Barbeiro</th>
+                        <th>Serviços</th>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Valor</th>
+                        <th>Status/Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Linhas serão preenchidas dinamicamente pelo JavaScript -->
+                </tbody>
+            </table>
         </div>
     </div>
     <script type="module" src="js/services.js"></script>
