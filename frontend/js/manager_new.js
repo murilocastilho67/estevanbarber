@@ -141,17 +141,47 @@ async function loadBarbersList() {
         }
         barbersSnapshot.forEach((docSnapshot) => {
             const barber = docSnapshot.data();
-            const div = document.createElement('div');
-            div.textContent = barber.name;
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Excluir';
-            deleteBtn.className = 'action-btn';
-            deleteBtn.onclick = async () => {
+            const card = document.createElement('div');
+            card.className = 'barber-card';
+            card.innerHTML = `
+                <div class="barber-info">
+                    <h4>${barber.name}</h4>
+                </div>
+                <div class="barber-actions">
+                    <button class="action-btn edit-barber" data-id="${docSnapshot.id}">Editar</button>
+                    <button class="action-btn delete-barber" data-id="${docSnapshot.id}">Excluir</button>
+                </div>
+            `;
+            barbersList.appendChild(card);
+        });
+
+        // Adiciona eventos aos botões de editar
+        document.querySelectorAll('.edit-barber').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const barberId = btn.dataset.id;
+                try {
+                    const barberDoc = await getDoc(doc(db, 'barbers', barberId));
+                    if (barberDoc.exists()) {
+                        const barber = barberDoc.data();
+                        document.getElementById('barberName').value = barber.name;
+                        document.getElementById('barberId').value = barberId; // Campo oculto pra edição
+                        document.getElementById('barberForm').querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar barbeiro para edição:', error);
+                    showPopup('Erro ao carregar barbeiro para edição: ' + error.message);
+                }
+            });
+        });
+
+        // Adiciona eventos aos botões de excluir
+        document.querySelectorAll('.delete-barber').forEach(btn => {
+            btn.addEventListener('click', async () => {
                 const confirmed = await showPopup('Excluir barbeiro?', true);
                 if (confirmed) {
                     try {
-                        await deleteDoc(doc(db, 'barbers', docSnapshot.id));
-                        console.log('Barbeiro excluído:', docSnapshot.id);
+                        await deleteDoc(doc(db, 'barbers', btn.dataset.id));
+                        console.log('Barbeiro excluído:', btn.dataset.id);
                         loadBarbers();
                         showPopup('Barbeiro excluído com sucesso!');
                     } catch (error) {
@@ -159,9 +189,7 @@ async function loadBarbersList() {
                         showPopup('Erro ao excluir barbeiro: ' + error.message);
                     }
                 }
-            };
-            div.appendChild(deleteBtn);
-            barbersList.appendChild(div);
+            });
         });
     } catch (error) {
         console.error('Erro ao carregar lista de barbeiros:', error);
@@ -345,17 +373,53 @@ async function loadServices() {
         servicesSnapshot.forEach((docSnapshot) => {
             const service = docSnapshot.data();
             const barberName = barberMap[service.barberId] || service.barberId;
-            const div = document.createElement('div');
-            div.textContent = `${service.name} (Barbeiro ${barberName}) - R$${service.price.toFixed(2)} (${service.duration} min)`;
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Excluir';
-            deleteBtn.className = 'action-btn';
-            deleteBtn.onclick = async () => {
+            const card = document.createElement('div');
+            card.className = 'service-card';
+            card.innerHTML = `
+                <div class="service-info">
+                    <h4>${service.name}</h4>
+                    <p>Barbeiro: ${barberName}</p>
+                    <p>Preço: R$${service.price.toFixed(2)}</p>
+                    <p>Duração: ${service.duration} min</p>
+                </div>
+                <div class="service-actions">
+                    <button class="action-btn edit-service" data-id="${docSnapshot.id}">Editar</button>
+                    <button class="action-btn delete-service" data-id="${docSnapshot.id}">Excluir</button>
+                </div>
+            `;
+            servicesList.appendChild(card);
+        });
+
+        // Adiciona eventos aos botões de editar
+        document.querySelectorAll('.edit-service').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const serviceId = btn.dataset.id;
+                try {
+                    const serviceDoc = await getDoc(doc(db, 'services', serviceId));
+                    if (serviceDoc.exists()) {
+                        const service = serviceDoc.data();
+                        document.getElementById('serviceBarber').value = service.barberId;
+                        document.getElementById('serviceName').value = service.name;
+                        document.getElementById('servicePrice').value = service.price;
+                        document.getElementById('serviceDuration').value = service.duration;
+                        document.getElementById('serviceId').value = serviceId; // Campo oculto pra edição
+                        document.getElementById('serviceForm').querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar serviço para edição:', error);
+                    showPopup('Erro ao carregar serviço para edição: ' + error.message);
+                }
+            });
+        });
+
+        // Adiciona eventos aos botões de excluir
+        document.querySelectorAll('.delete-service').forEach(btn => {
+            btn.addEventListener('click', async () => {
                 const confirmed = await showPopup('Excluir serviço?', true);
                 if (confirmed) {
                     try {
-                        await deleteDoc(doc(db, 'services', docSnapshot.id));
-                        console.log('Serviço excluído:', docSnapshot.id);
+                        await deleteDoc(doc(db, 'services', btn.dataset.id));
+                        console.log('Serviço excluído:', btn.dataset.id);
                         loadServices();
                         showPopup('Serviço excluído com sucesso!');
                     } catch (error) {
@@ -363,9 +427,7 @@ async function loadServices() {
                         showPopup('Erro ao excluir serviço: ' + error.message);
                     }
                 }
-            };
-            div.appendChild(deleteBtn);
-            servicesList.appendChild(div);
+            });
         });
     } catch (error) {
         console.error('Erro ao carregar serviços:', error);
@@ -475,38 +537,44 @@ document.getElementById('dateFilter').addEventListener('change', (e) => {
 
 document.getElementById('serviceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const serviceId = document.getElementById('serviceId').value;
     const barberId = document.getElementById('serviceBarber').value;
     const name = document.getElementById('serviceName').value;
     const price = parseFloat(document.getElementById('servicePrice').value);
     const duration = parseInt(document.getElementById('serviceDuration').value);
-    const id = `service${Date.now()}`;
+    const id = serviceId || `service${Date.now()}`; // Usa o ID existente ou cria um novo
 
     try {
         await setDoc(doc(db, 'services', id), { id, barberId, name, price, duration });
-        console.log('Serviço adicionado:', id);
+        console.log('Serviço salvo:', id);
         loadServices();
         document.getElementById('serviceForm').reset();
-        showPopup('Serviço adicionado com sucesso!');
+        document.getElementById('serviceId').value = '';
+        document.getElementById('serviceForm').querySelector('button[type="submit"]').textContent = 'Adicionar/Editar Serviço';
+        showPopup('Serviço salvo com sucesso!');
     } catch (error) {
-        console.error('Erro ao adicionar serviço:', error);
-        showPopup('Erro ao adicionar serviço: ' + error.message);
+        console.error('Erro ao salvar serviço:', error);
+        showPopup('Erro ao salvar serviço: ' + error.message);
     }
 });
 
 document.getElementById('barberForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const barberId = document.getElementById('barberId').value;
     const name = document.getElementById('barberName').value;
-    const id = `barber${Date.now()}`;
+    const id = barberId || `barber${Date.now()}`; // Usa o ID existente ou cria um novo
 
     try {
         await setDoc(doc(db, 'barbers', id), { id, name });
-        console.log('Barbeiro adicionado:', id);
+        console.log('Barbeiro salvo:', id);
         loadBarbers();
         document.getElementById('barberForm').reset();
-        showPopup('Barbeiro adicionado com sucesso!');
+        document.getElementById('barberId').value = '';
+        document.getElementById('barberForm').querySelector('button[type="submit"]').textContent = 'Adicionar Barbeiro';
+        showPopup('Barbeiro salvo com sucesso!');
     } catch (error) {
-        console.error('Erro ao adicionar barbeiro:', error);
-        showPopup('Erro ao adicionar barbeiro: ' + error.message);
+        console.error('Erro ao salvar barbeiro:', error);
+        showPopup('Erro ao salvar barbeiro: ' + error.message);
     }
 });
 

@@ -20,24 +20,25 @@
             align-items: center;
         }
         .popup {
-            background: #1a1a1a;
-            color: #fff;
+            background: #fff;
+            color: #4b2e1e;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             text-align: center;
             max-width: 400px;
             width: 80%;
-            border: 2px solid #d4af37;
+            border: 2px solid #4b2e1e;
         }
         .popup h3 {
             margin: 0 0 10px;
-            color: #d4af37;
+            color: #4b2e1e;
             font-size: 1.5em;
         }
         .popup p {
             margin: 0 0 20px;
             font-size: 1em;
+            color: #4b2e1e;
         }
         .popup-buttons {
             display: flex;
@@ -53,18 +54,18 @@
             transition: background 0.3s;
         }
         .popup-button.confirm {
-            background: #d4af37;
-            color: #1a1a1a;
+            background: #4b2e1e;
+            color: #fff;
         }
         .popup-button.confirm:hover {
-            background: #b8972e;
+            background: #6b4e31;
         }
         .popup-button.cancel {
-            background: #555;
+            background: #d9534f;
             color: #fff;
         }
         .popup-button.cancel:hover {
-            background: #444;
+            background: #c9302c;
         }
     </style>
     <script type="module">
@@ -95,6 +96,7 @@
         <div id="barbers-section" class="section active">
             <h2>Gerenciar Barbeiros</h2>
             <form id="barberForm">
+                <input type="hidden" id="barberId" name="barberId">
                 <label for="barberName">Nome do Barbeiro:</label>
                 <input type="text" id="barberName" name="barberName" required>
                 <button type="submit">Adicionar Barbeiro</button>
@@ -137,6 +139,7 @@
         <div id="services-section" class="section">
             <h2>Gerenciar Serviços</h2>
             <form id="serviceForm">
+                <input type="hidden" id="serviceId" name="serviceId">
                 <label for="serviceBarber">Barbeiro:</label>
                 <select id="serviceBarber" name="serviceBarber"></select>
                 <label for="serviceName">Nome do Serviço:</label>

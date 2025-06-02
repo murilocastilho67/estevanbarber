@@ -114,6 +114,12 @@ input, select, textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #4b2e1e;
+    outline: none;
 }
 
 textarea {
@@ -130,6 +136,7 @@ button {
     font-size: 1rem;
     cursor: pointer;
     margin: 0.5rem 0;
+    transition: background-color 0.3s;
 }
 
 button:disabled {
@@ -166,8 +173,14 @@ a:hover {
     margin-bottom: 1rem;
 }
 
-#servicesList div, #barbersList div {
+#barbersList div, #schedulesList div {
     margin: 0;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child {
+    border-bottom: none;
 }
 
 #timeSlots {
@@ -358,6 +371,169 @@ th {
     color: #4b2e1e;
 }
 
+/* Estilos para formulários de cadastro no manager.html */
+form#barberForm, form#serviceForm, form#scheduleForm {
+    background: #fafafa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #4b2e1e;
+}
+
+form#barberForm label, form#serviceForm label, form#scheduleForm label {
+    font-weight: 600;
+    color: #4b2e1e;
+}
+
+form#barberForm input, form#serviceForm input, form#scheduleForm input,
+form#barberForm select, form#serviceForm select, form#scheduleForm select {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+form#barberForm button, form#serviceForm button, form#scheduleForm button {
+    background: #4b2e1e;
+    color: #fff;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+form#barberForm button:hover, form#serviceForm button:hover, form#scheduleForm button:hover {
+    background: #6b4e31;
+    transform: scale(1.02);
+}
+
+form#scheduleForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+form#scheduleForm button {
+    grid-column: span 2;
+}
+
+/* Estilo para cards de serviços */
+#servicesList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.service-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+}
+
+.service-card .service-info h4 {
+    margin: 0 0 0.5rem;
+    color: #4b2e1e;
+    font-size: 1.1rem;
+}
+
+.service-card .service-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+}
+
+.service-card .service-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.service-card .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.service-card .action-btn.edit-service {
+    background: #4b2e1e;
+    color: #fff;
+}
+
+.service-card .action-btn.edit-service:hover {
+    background: #6b4e31;
+}
+
+.service-card .action-btn.delete-service {
+    background: #d9534f;
+    color: #fff;
+}
+
+.service-card .action-btn.delete-service:hover {
+    background: #c9302c;
+}
+
+/* Estilo para cards de barbeiros */
+#barbersList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.barber-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.barber-card:hover {
+    transform: translateY(-2px);
+}
+
+.barber-card .barber-info h4 {
+    margin: 0 0 0.5rem;
+    color: #4b2e1e;
+    font-size: 1.1rem;
+}
+
+.barber-card .barber-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.barber-card .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.barber-card .action-btn.edit-barber {
+    background: #4b2e1e;
+    color: #fff;
+}
+
+.barber-card .action-btn.edit-barber:hover {
+    background: #6b4e31;
+}
+
+.barber-card .action-btn.delete-barber {
+    background: #d9534f;
+    color: #fff;
+}
+
+.barber-card .action-btn.delete-barber:hover {
+    background: #c9302c;
+}
+
 /* Responsividade específica para services.html */
 @media (max-width: 768px) {
     body.manager-layout {
@@ -463,6 +639,7 @@ th {
         font-size: 0.9rem;
     }
 
+    /* Transforma a tabela de agendamentos em cards no mobile */
     #appointmentsTable, #appointmentsList, #schedulesList {
         display: block;
     }
@@ -509,8 +686,43 @@ th {
         font-size: 0.8rem;
     }
 
-    #barbersList div, #servicesList div {
+    #barbersList div, #servicesList div, #schedulesList div {
         padding: 0.3rem 0;
+        font-size: 0.8rem;
+    }
+
+    /* Responsividade para formulários de cadastro */
+    form#barberForm, form#serviceForm, form#scheduleForm {
+        padding: 1rem;
+    }
+
+    form#scheduleForm {
+        grid-template-columns: 1fr;
+    }
+
+    form#scheduleForm button {
+        grid-column: span 1;
+    }
+
+    /* Responsividade para cards de serviços e barbeiros */
+    #servicesList, #barbersList {
+        grid-template-columns: 1fr;
+    }
+
+    .service-card, .barber-card {
+        padding: 0.8rem;
+    }
+
+    .service-card .service-info h4, .barber-card .barber-info h4 {
+        font-size: 1rem;
+    }
+
+    .service-card .service-info p {
+        font-size: 0.8rem;
+    }
+
+    .service-card .action-btn, .barber-card .action-btn {
+        padding: 0.3rem 0.6rem;
         font-size: 0.8rem;
     }
 }
@@ -553,7 +765,7 @@ th {
         font-size: 0.8rem;
     }
 
-    #barbersList div, #servicesList div {
+    #barbersList div, #servicesList div, #schedulesList div {
         font-size: 0.75rem;
     }
 }
