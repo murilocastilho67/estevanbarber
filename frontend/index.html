@@ -5,70 +5,168 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Login</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Firebase SDK Modular -->
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        window.auth = auth;
-        window.db = db;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const toggleToSignup = document.getElementById('toggleToSignup');
+            const toggleToLogin = document.getElementById('toggleToLogin');
+            const errorMessage = document.getElementById('errorMessage');
+            const phoneInput = document.getElementById('signupPhoneNumber');
+
+            // Função pra formatar o número de telefone visualmente
+            phoneInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+                if (value.length > 11) value = value.slice(0, 11); // Limita a 11 dígitos
+
+                // Formata o número como (DD) 9XXXX-XXXX
+                if (value.length >= 2) {
+                    value = `(${value.slice(0, 2)})${value.slice(2)}`;
+                }
+                if (value.length >= 7) {
+                    value = `${value.slice(0, 5)} ${value.slice(5)}`;
+                }
+                if (value.length >= 12) {
+                    value = `${value.slice(0, 10)}-${value.slice(10)}`;
+                }
+
+                e.target.value = value;
+            });
+
+            toggleToSignup.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginForm.classList.remove('active');
+                signupForm.classList.add('active');
+                errorMessage.style.display = 'none';
+            });
+
+            toggleToLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                signupForm.classList.remove('active');
+                loginForm.classList.add('active');
+                errorMessage.style.display = 'none';
+            });
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    console.log('Usuário logado:', user.email);
+                    if (email === 'gerente@estevan.com') {
+                        window.location.href = 'manager.html';
+                    } else {
+                        window.location.href = 'services.html';
+                    }
+                } catch (error) {
+                    console.error('Erro ao fazer login:', error);
+                    errorMessage.textContent = 'Erro ao fazer login: ' + (error.code === 'auth/invalid-credential' ? 'E-mail ou senha inválidos.' : error.message);
+                    errorMessage.style.display = 'block';
+                }
+            });
+
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const firstName = document.getElementById('signupFirstName').value;
+                const lastName = document.getElementById('signupLastName').value;
+                const email = document.getElementById('signupEmail').value;
+                let phoneNumber = document.getElementById('signupPhoneNumber').value;
+                const password = document.getElementById('signupPassword').value;
+
+                // Remove a formatação visual e adiciona o +55
+                phoneNumber = phoneNumber.replace(/\D/g, ''); // Remove tudo que não é dígito
+                if (phoneNumber.length !== 11) {
+                    errorMessage.textContent = 'O número de telefone deve ter 11 dígitos (DDD + número).';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                phoneNumber = `+55${phoneNumber}`; // Adiciona o +55
+
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    console.log('Usuário cadastrado:', user.email);
+
+                    await setDoc(doc(db, 'users', user.uid), {
+                        firstName: firstName,
+                        lastName: lastName,
+                        email: email,
+                        phoneNumber: phoneNumber,
+                        role: 'client', // Adiciona o campo role como "client"
+                        createdAt: new Date().toISOString()
+                    });
+
+                    window.location.href = 'services.html';
+                } catch (error) {
+                    console.error('Erro ao cadastrar:', error);
+                    errorMessage.textContent = 'Erro ao cadastrar: ' + (error.code === 'auth/email-already-in-use' ? 'E-mail já está em uso.' : error.message);
+                    errorMessage.style.display = 'block';
+                }
+            });
+
+            document.getElementById('togglePassword').addEventListener('click', () => {
+                const passwordInput = document.getElementById('loginPassword');
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                document.getElementById('togglePassword').textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+            });
+
+            document.getElementById('toggleSignupPassword').addEventListener('click', () => {
+                const passwordInput = document.getElementById('signupPassword');
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                document.getElementById('toggleSignupPassword').textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+            });
+        });
     </script>
 </head>
 <body class="centered">
     <div class="container">
+        <img src="assets/logo.png" alt="Estevan Barber Logo" class="logo">
         <h1>Estevan Barber</h1>
-        <div class="form-container">
-            <form id="loginForm">
-                <h2>Login</h2>
-                <label for="email">E-mail:</label>
-                <input type="email" id="email" name="email" required>
-                <label for="password">Senha:</label>
-                <div class="password-container">
-                    <input type="password" id="password" name="password" required>
-                    <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
-                </div>
-                <div id="loginError" class="error-message"></div>
-                <button type="submit">Entrar</button>
-                <p>Não tem conta? <a href="#" id="showRegister">Cadastre-se</a></p>
-                <p>Esqueceu a senha? <a href="#" id="resetPassword">Redefinir senha</a></p>
-            </form>
-            <form id="registerForm" style="display: none;">
-                <h2>Cadastro</h2>
-                <label for="name">Nome:</label>
-                <input type="text" id="name" name="name" required>
-                <label for="phone">Telefone:</label>
-                <input type="tel" id="phone" name="phone" required>
-                <label for="reg-email">E-mail:</label>
-                <input type="email" id="reg-email" name="reg-email" required>
-                <label for="reg-password">Senha:</label>
-                <div class="password-container">
-                    <input type="password" id="reg-password" name="reg-password" required>
-                    <span class="toggle-password" onclick="togglePassword('reg-password')">👁️</span>
-                </div>
-                <div id="registerError" class="error-message"></div>
-                <button type="submit">Cadastrar</button>
-                <p>Já tem conta? <a href="#" id="showLogin">Fazer login</a></p>
-            </form>
-        </div>
+        <div id="errorMessage" class="error-message"></div>
+        <form id="loginForm" class="section active">
+            <h2>Login</h2>
+            <label for="loginEmail">E-mail:</label>
+            <input type="email" id="loginEmail" name="loginEmail" required>
+            <label for="loginPassword">Senha:</label>
+            <div class="password-container">
+                <input type="password" id="loginPassword" name="loginPassword" required>
+                <span class="toggle-password" id="togglePassword">👁️</span>
+            </div>
+            <button type="submit">Entrar</button>
+            <p>Não tem uma conta? <a href="#" id="toggleToSignup">Cadastre-se</a></p>
+        </form>
+        <form id="signupForm" class="section">
+            <h2>Cadastro</h2>
+            <label for="signupFirstName">Nome:</label>
+            <input type="text" id="signupFirstName" name="signupFirstName" required>
+            <label for="signupLastName">Sobrenome:</label>
+            <input type="text" id="signupLastName" name="signupLastName" required>
+            <label for="signupEmail">E-mail:</label>
+            <input type="email" id="signupEmail" name="signupEmail" required>
+            <label for="signupPhoneNumber">Número de Telefone (DDD + Número):</label>
+            <input type="tel" id="signupPhoneNumber" name="signupPhoneNumber" maxlength="15" placeholder="(49) 99937-5167" required>
+            <label for="signupPassword">Senha:</label>
+            <div class="password-container">
+                <input type="password" id="signupPassword" name="signupPassword" required>
+                <span class="toggle-password" id="toggleSignupPassword">👁️</span>
+            </div>
+            <button type="submit">Cadastrar</button>
+            <p>Já tem uma conta? <a href="#" id="toggleToLogin">Faça login</a></p>
+        </form>
     </div>
-    <script type="module" src="js/login.js"></script>
-    <script>
-        function togglePassword(fieldId) {
-            const input = document.getElementById(fieldId);
-            const icon = input.nextElementSibling;
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                icon.textContent = '👁️';
-            }
-        }
-    </script>
 </body>
 </html>

@@ -8,47 +8,63 @@
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        window.db = db;
-        window.auth = auth;
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                console.error('Usuário não autenticado. Redirecionando para login...');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const appointmentId = sessionStorage.getItem('appointmentId');
+            if (!appointmentId) {
+                console.error('ID do agendamento não encontrado. Redirecionando para services.html...');
+                window.location.href = 'services.html';
+                return;
+            }
+
+            document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const rating = parseInt(document.getElementById('rating').value);
+                const comment = document.getElementById('comment').value;
+
+                await setDoc(doc(db, 'feedbacks', `feedback${Date.now()}`), {
+                    appointmentId: appointmentId,
+                    userId: user.uid,
+                    rating: rating,
+                    comment: comment,
+                    createdAt: new Date().toISOString()
+                });
+
+                sessionStorage.removeItem('appointmentId');
+                window.location.href = 'services.html';
+            });
+        });
     </script>
 </head>
 <body class="centered">
     <div class="container">
-        <h1>Estevan Barber</h1>
-        <h2>Avalie seu atendimento</h2>
-        <div id="appointmentInfo">
-            <p><strong>Barbeiro:</strong> <span id="barberName"></span></p>
-            <p><strong>Serviços:</strong> <span id="services"></span></p>
-            <p><strong>Data:</strong> <span id="date"></span></p>
-            <p><strong>Horário:</strong> <span id="time"></span></p>
-        </div>
+        <img src="assets/logo.png" alt="Estevan Barber Logo" class="logo">
+        <h1>Feedback</h1>
         <form id="feedbackForm">
             <label for="rating">Avaliação (1 a 5):</label>
             <select id="rating" name="rating" required>
-                <option value="1">1 - Ruim</option>
-                <option value="2">2 - Regular</option>
-                <option value="3">3 - Bom</option>
-                <option value="4">4 - Muito Bom</option>
-                <option value="5">5 - Excelente</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
             </select>
-            <label for="comment">Comentário:</label>
-            <textarea id="comment" name="comment" rows="4"></textarea>
+            <label for="comment">Comentário (opcional):</label>
+            <textarea id="comment" name="comment"></textarea>
             <button type="submit">Enviar Feedback</button>
         </form>
-        <button id="backToServices">Voltar aos Serviços</button>
-        <div id="feedbackPopup" class="popup" style="display: none;">
-            <div class="popup-content">
-                <p id="popupMessage"></p>
-                <button id="closePopup">Fechar</button>
-            </div>
-        </div>
     </div>
-    <script type="module" src="js/feedback.js"></script>
 </body>
 </html>

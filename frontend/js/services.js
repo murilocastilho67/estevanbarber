@@ -9,6 +9,45 @@ console.log('Função where carregada:', typeof where === 'function');
 const auth = getAuth();
 const db = window.db;
 
+// Função para pop-up personalizado
+function showPopup(message, isConfirm = false, onConfirm = null) {
+    return new Promise((resolve) => {
+        console.log('Mostrando pop-up:', message, 'Confirm:', isConfirm);
+        const popup = document.getElementById('customPopup');
+        const title = document.getElementById('popupTitle');
+        const popupMessage = document.getElementById('popupMessage');
+        const confirmBtn = document.getElementById('popupConfirm');
+        const cancelBtn = document.getElementById('popupCancel');
+
+        title.textContent = 'Estevan Barber';
+        popupMessage.textContent = message;
+        cancelBtn.style.display = isConfirm ? 'inline-block' : 'none';
+
+        const closePopup = () => {
+            console.log('Fechando pop-up');
+            popup.style.display = 'none';
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+        };
+
+        const handleConfirm = () => {
+            closePopup();
+            if (onConfirm) onConfirm();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            closePopup();
+            resolve(false);
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+
+        popup.style.display = 'flex';
+    });
+}
+
 // Flag pra evitar múltiplas chamadas ao loadBarbers
 let isLoadingBarbers = false;
 
@@ -401,7 +440,7 @@ async function loadAppointments() {
         console.log('Configurando eventos dos botões...');
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                const confirmed = window.confirm('Deseja cancelar este agendamento?');
+                const confirmed = await showPopup('Deseja cancelar este agendamento?', true);
                 if (confirmed) {
                     try {
                         console.log('Cancelando agendamento ID:', btn.dataset.id);
@@ -410,7 +449,7 @@ async function loadAppointments() {
                         loadAppointments();
                     } catch (error) {
                         console.error('Erro ao cancelar agendamento:', error);
-                        alert('Erro ao cancelar agendamento: ' + error.message);
+                        showPopup('Erro ao cancelar agendamento: ' + error.message);
                     }
                 }
             });
@@ -454,11 +493,11 @@ document.getElementById('date').addEventListener('change', (e) => {
     }
 });
 
-document.getElementById('next').addEventListener('click', () => {
+document.getElementById('next').addEventListener('click', async () => {
     const selectedTime = sessionStorage.getItem('selectedTime');
     console.log('Clicou em próximo, horário selecionado:', selectedTime);
     if (!selectedTime) {
-        alert('Selecione um horário antes de avançar.');
+        await showPopup('Selecione um horário antes de avançar.');
         return;
     }
     window.location.href = 'confirmation.html';

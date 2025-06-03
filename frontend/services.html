@@ -5,6 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Agendamento</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilo do pop-up personalizado */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup {
+            background: #fff;
+            color: #4b2e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 80%;
+            border: 2px solid #4b2e1e;
+        }
+        .popup h3 {
+            margin: 0 0 10px;
+            color: #4b2e1e;
+            font-size: 1.5em;
+        }
+        .popup p {
+            margin: 0 0 20px;
+            font-size: 1em;
+            color: #4b2e1e;
+        }
+        .popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .popup-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        .popup-button.confirm {
+            background: #4b2e1e;
+            color: #fff;
+        }
+        .popup-button.confirm:hover {
+            background: #6b4e31;
+        }
+        .popup-button.cancel {
+            background: #d9534f;
+            color: #fff;
+        }
+        .popup-button.cancel:hover {
+            background: #c9302c;
+        }
+    </style>
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -20,6 +83,7 @@
 </head>
 <body class="manager-layout">
     <div class="sidebar">
+        <img src="assets/logo.png" alt="Estevan Barber Logo" class="logo">
         <h2>Estevan Barber</h2>
         <nav>
             <a href="#" id="newAppointmentLink" class="active">Novo Agendamento</a>
@@ -64,6 +128,17 @@
                     <!-- Linhas serão preenchidas dinamicamente pelo JavaScript -->
                 </tbody>
             </table>
+        </div>
+    </div>
+    <!-- Pop-up personalizado -->
+    <div class="popup-overlay" id="customPopup">
+        <div class="popup">
+            <h3 id="popupTitle">Estevan Barber</h3>
+            <p id="popupMessage"></p>
+            <div class="popup-buttons">
+                <button class="popup-button confirm" id="popupConfirm">OK</button>
+                <button class="popup-button cancel" id="popupCancel" style="display: none;">Cancelar</button>
+            </div>
         </div>
     </div>
     <script type="module" src="js/services.js"></script>

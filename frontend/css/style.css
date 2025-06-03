@@ -34,6 +34,12 @@ body.manager-layout {
     transition: transform 0.3s ease-in-out;
 }
 
+.sidebar .logo {
+    display: block;
+    max-width: 150px;
+    margin: 0 auto 1rem;
+}
+
 .sidebar h2 {
     color: #fff;
     margin-bottom: 2rem;
@@ -52,6 +58,13 @@ body.manager-layout {
     margin: 0.5rem 0;
     border-radius: 5px;
     transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar a i {
+    font-size: 1.2rem;
 }
 
 .sidebar a:hover {
@@ -81,6 +94,12 @@ body.manager-layout {
     max-width: 800px;
     width: 100%;
     margin: 2rem auto;
+}
+
+.container .logo {
+    display: block;
+    max-width: 150px;
+    margin: 0 auto 1rem;
 }
 
 .form-container {
@@ -171,6 +190,20 @@ a:hover {
 #servicesList, #appointmentsList, #barbersList, #schedulesList {
     text-align: left;
     margin-bottom: 1rem;
+}
+
+#servicesList {
+    padding-left: 0;
+    margin: 0 auto;
+    width: fit-content;
+    text-align: left;
+}
+
+#servicesList li {
+    list-style-type: none;
+    margin: 0.5rem 0;
+    color: #4b2e1e;
+    font-size: 1rem;
 }
 
 #barbersList div, #schedulesList div {
@@ -338,14 +371,13 @@ th {
     margin: 0;
     line-height: 1.5;
     text-align: left;
-    order: 1;
+    flex-grow: 1; /* Faz o label ocupar o espaço disponível */
 }
 
 .service-item input[type="checkbox"] {
     margin: 0;
     accent-color: #4b2e1e;
     transform: scale(1.2);
-    order: 2;
 }
 
 #calendar {
@@ -547,6 +579,10 @@ form#scheduleForm button {
         padding: 0.5rem;
     }
 
+    .sidebar .logo {
+        max-width: 120px;
+    }
+
     .sidebar h2 {
         font-size: 1.2rem;
         margin-bottom: 1rem;
@@ -596,6 +632,10 @@ form#scheduleForm button {
         max-width: 90%;
         padding: 1rem;
         margin: 1rem auto;
+    }
+
+    .container .logo {
+        max-width: 120px;
     }
 
     h1 {
@@ -683,7 +723,9 @@ form#scheduleForm button {
 
     .action-btn {
         padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        transition: background-color 0.3s;
     }
 
     #barbersList div, #servicesList div, #schedulesList div {
@@ -711,6 +753,8 @@ form#scheduleForm button {
 
     .service-card, .barber-card {
         padding: 0.8rem;
+        flex-direction: column; /* Muda o layout dos cards pra vertical no mobile */
+        align-items: flex-start; /* Alinha o conteúdo à esquerda */
     }
 
     .service-card .service-info h4, .barber-card .barber-info h4 {
@@ -721,9 +765,18 @@ form#scheduleForm button {
         font-size: 0.8rem;
     }
 
+    .service-card .service-actions, .barber-card .barber-actions {
+        flex-direction: column; /* Empilha os botões verticalmente */
+        gap: 0.5rem;
+        width: 100%; /* Faz os botões ocuparem toda a largura do card */
+        margin-top: 0.5rem;
+    }
+
     .service-card .action-btn, .barber-card .action-btn {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
+        width: 100%; /* Botões ocupam a largura total */
+        padding: 0.5rem; /* Aumenta o padding pra facilitar o clique */
+        font-size: 0.9rem; /* Tamanho de fonte maior pra legibilidade */
+        text-align: center;
     }
 }
 
@@ -752,8 +805,8 @@ form#scheduleForm button {
     }
 
     .action-btn {
-        padding: 0.2rem 0.5rem;
-        font-size: 0.75rem;
+        padding: 0.4rem;
+        font-size: 0.85rem;
     }
 
     .sidebar nav {

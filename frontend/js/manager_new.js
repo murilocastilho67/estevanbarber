@@ -16,6 +16,13 @@ auth.onAuthStateChanged((user) => {
         window.location.href = 'index.html';
     } else {
         console.log('Usuário autenticado:', user.email);
+        // Carrega os barbeiros (necessário para os filtros de agendamentos)
+        loadBarbers().then(() => {
+            // Após carregar os barbeiros, mostra a seção de agendamentos por padrão
+            showSection('appointments-section');
+            // Carrega os agendamentos
+            loadAppointments();
+        });
     }
 });
 
@@ -262,11 +269,22 @@ async function loadAppointments(barberId = 'all', date = '') {
                     const userDoc = await getDoc(userRef);
                     console.log('Documento do usuário obtido:', userDoc.exists());
                     if (userDoc.exists()) {
-                        userName = userDoc.data().name || 'Desconhecido';
-                        console.log('Usuário encontrado:', userName);
+                        const userData = userDoc.data();
+                        console.log('Dados do usuário:', JSON.stringify(userData)); // Log pra depurar
+                        // Verifica se o usuário tem firstName/lastName ou apenas name
+                        if (userData.firstName && userData.lastName) {
+                            userName = `${userData.firstName} ${userData.lastName}`;
+                            console.log('Usando firstName/lastName:', userName);
+                        } else if (userData.name) {
+                            userName = userData.name;
+                            console.log('Usando name:', userName);
+                        } else {
+                            console.warn('Nenhum campo de nome encontrado no usuário:', appt.userId);
+                        }
                     } else {
                         console.warn(`Usuário ${appt.userId} não encontrado`);
                     }
+                    console.log('Usuário encontrado:', userName);
                 } catch (error) {
                     console.warn(`Erro ao buscar usuário ${appt.userId}, usando "Desconhecido":`, error);
                 }
@@ -740,6 +758,3 @@ window.editSchedule = (id, dayOfWeek, barberId, startTime, endTime, breakStart, 
     document.getElementById('breakStart').value = breakStart || '';
     document.getElementById('breakEnd').value = breakEnd || '';
 };
-
-loadBarbers();
-showSection('barbers-section');
