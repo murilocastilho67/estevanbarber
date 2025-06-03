@@ -209,7 +209,7 @@ a:hover {
 #barbersList div, #schedulesList div {
     margin: 0;
     padding: 0.5rem 0;
-    border-bottom: 1px solid #e0e0e0;
+    /* Removido border-bottom pra tirar o risco */
 }
 
 #servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child {
@@ -322,7 +322,9 @@ th {
 }
 
 #appointmentsTable {
-    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Cards no desktop */
+    gap: 1rem;
     margin-top: 1rem;
 }
 
@@ -450,7 +452,7 @@ form#scheduleForm button {
 /* Estilo para cards de serviços */
 #servicesList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Mesma lógica dos barbeiros */
     gap: 1rem;
 }
 
@@ -566,7 +568,142 @@ form#scheduleForm button {
     background: #c9302c;
 }
 
-/* Responsividade específica para services.html */
+/* Estilo para cards de agendamentos */
+#appointmentsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Cards no desktop */
+    gap: 1rem;
+}
+
+.appointment-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.appointment-card:hover {
+    transform: translateY(-2px);
+}
+
+.appointment-card p {
+    margin: 0.3rem 0;
+    font-size: 0.9rem;
+    color: #4b2e1e;
+}
+
+.appointment-card .appointment-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.appointment-card .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.appointment-card .action-btn.cancel {
+    background: #d9534f;
+    color: #fff;
+}
+
+.appointment-card .action-btn.cancel:hover {
+    background: #c9302c;
+}
+
+.appointment-card .action-btn.completed {
+    background: #5cb85c;
+    color: #fff;
+}
+
+.appointment-card .action-btn.completed:hover {
+    background: #4cae4c;
+}
+
+.appointment-card .action-btn.no-show {
+    background: #f0ad4e;
+    color: #fff;
+}
+
+.appointment-card .action-btn.no-show:hover {
+    background: #ec971f;
+}
+
+.appointment-card .action-btn.feedback-btn {
+    background: #5bc0de;
+    color: #fff;
+}
+
+.appointment-card .action-btn.feedback-btn:hover {
+    background: #46b8da;
+}
+
+/* Estilo para cards de horários */
+#schedulesList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Cards no desktop */
+    gap: 1rem;
+}
+
+.schedule-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.schedule-card:hover {
+    transform: translateY(-2px);
+}
+
+.schedule-card .schedule-info h4 {
+    margin: 0 0 0.5rem;
+    color: #4b2e1e;
+    font-size: 1.1rem;
+}
+
+.schedule-card .schedule-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+}
+
+.schedule-card .schedule-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.schedule-card .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.schedule-card .action-btn.edit-schedule {
+    background: #4b2e1e;
+    color: #fff;
+}
+
+.schedule-card .action-btn.edit-schedule:hover {
+    background: #6b4e31;
+}
+
+.schedule-card .action-btn.delete-schedule {
+    background: #d9534f;
+    color: #fff;
+}
+
+.schedule-card .action-btn.delete-schedule:hover {
+    background: #c9302c;
+}
+
+/* Responsividade */
 @media (max-width: 768px) {
     body.manager-layout {
         flex-direction: column;
@@ -679,46 +816,64 @@ form#scheduleForm button {
         font-size: 0.9rem;
     }
 
-    /* Transforma a tabela de agendamentos em cards no mobile */
-    #appointmentsTable, #appointmentsList, #schedulesList {
-        display: block;
+    /* Ajustes para cards de agendamentos em services.html e manager.html */
+    #appointmentsList, #appointmentsTable {
+        grid-template-columns: 1fr; /* Um card por linha no mobile */
     }
 
-    #appointmentsTable thead, #appointmentsList thead, #schedulesList thead {
-        display: none;
+    .appointment-card {
+        padding: 0.8rem;
     }
 
-    #appointmentsTable tbody, #appointmentsList tbody, #schedulesList tbody {
-        display: block;
-    }
-
-    #appointmentsTable tr, #appointmentsList tr, #schedulesList tr {
-        display: block;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        background: #f9f9f9;
-        border: 1px solid #e0e0e0;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    #appointmentsTable td, #appointmentsList td, #schedulesList td {
-        display: block;
-        text-align: left;
-        padding: 0.3rem 0;
-        border: none;
+    .appointment-card p {
         font-size: 0.8rem;
     }
 
-    #appointmentsTable td:before, #appointmentsList td:before, #schedulesList td:before {
-        content: attr(data-label) ": ";
-        font-weight: bold;
-        color: #4b2e1e;
-        margin-right: 0.5rem;
+    .appointment-card .appointment-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
     }
 
-    #appointmentsTable td:last-child, #appointmentsList td:last-child, #schedulesList td:last-child {
-        border-bottom: none;
+    .appointment-card .action-btn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* Transforma a tabela de horários em cards no mobile (já tá assim, só ajustando) */
+    #schedulesList {
+        grid-template-columns: 1fr; /* Um card por linha no mobile */
+    }
+
+    .schedule-card {
+        padding: 0.8rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .schedule-card .schedule-info h4 {
+        font-size: 1rem;
+    }
+
+    .schedule-card .schedule-info p {
+        font-size: 0.8rem;
+    }
+
+    .schedule-card .schedule-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .schedule-card .action-btn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
     }
 
     .action-btn {
@@ -728,7 +883,7 @@ form#scheduleForm button {
         transition: background-color 0.3s;
     }
 
-    #barbersList div, #servicesList div, #schedulesList div {
+    #barbersList div, #schedulesList div {
         padding: 0.3rem 0;
         font-size: 0.8rem;
     }
@@ -748,7 +903,7 @@ form#scheduleForm button {
 
     /* Responsividade para cards de serviços e barbeiros */
     #servicesList, #barbersList {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Dinâmico: 2 cards por linha se couber */
     }
 
     .service-card, .barber-card {
@@ -800,8 +955,30 @@ form#scheduleForm button {
         font-size: 0.9rem;
     }
 
-    #appointmentsTable td, #appointmentsList td, #schedulesList td {
+    #appointmentsList, #appointmentsTable {
+        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+    }
+
+    .appointment-card p {
         font-size: 0.75rem;
+    }
+
+    .appointment-card .action-btn {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    #schedulesList {
+        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+    }
+
+    .schedule-card .schedule-info p {
+        font-size: 0.75rem;
+    }
+
+    .schedule-card .action-btn {
+        padding: 0.4rem;
+        font-size: 0.85rem;
     }
 
     .action-btn {

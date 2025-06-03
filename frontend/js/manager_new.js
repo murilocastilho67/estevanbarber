@@ -210,8 +210,8 @@ async function loadAppointments(barberId = 'all', date = '') {
         if (!db) throw new Error('Firestore não inicializado');
         console.log('Firestore inicializado:', !!db);
 
-        const appointmentsList = document.getElementById('appointmentsList').querySelector('tbody');
-        console.log('Tabela encontrada:', !!appointmentsList);
+        const appointmentsList = document.getElementById('appointmentsList');
+        console.log('Container de agendamentos encontrado:', !!appointmentsList);
         appointmentsList.innerHTML = '';
 
         console.log('Buscando agendamentos...');
@@ -220,7 +220,7 @@ async function loadAppointments(barberId = 'all', date = '') {
 
         if (appointmentsSnapshot.empty) {
             console.log('Nenhum agendamento encontrado');
-            appointmentsList.innerHTML = '<tr><td colspan="9">Nenhum agendamento encontrado.</td></tr>';
+            appointmentsList.innerHTML = '<p>Nenhum agendamento encontrado.</p>';
             return;
         }
 
@@ -270,8 +270,7 @@ async function loadAppointments(barberId = 'all', date = '') {
                     console.log('Documento do usuário obtido:', userDoc.exists());
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        console.log('Dados do usuário:', JSON.stringify(userData)); // Log pra depurar
-                        // Verifica se o usuário tem firstName/lastName ou apenas name
+                        console.log('Dados do usuário:', JSON.stringify(userData));
                         if (userData.firstName && userData.lastName) {
                             userName = `${userData.firstName} ${userData.lastName}`;
                             console.log('Usando firstName/lastName:', userName);
@@ -291,7 +290,7 @@ async function loadAppointments(barberId = 'all', date = '') {
 
                 const barberName = barberMap[appt.barberId] || appt.barberId;
 
-                console.log('Montando linha da tabela...');
+                console.log('Montando card de agendamento...');
                 const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
                 const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
                                 appt.status === 'completed' ? 'Realizado' :
@@ -319,30 +318,33 @@ async function loadAppointments(barberId = 'all', date = '') {
                 }
                 console.log('Feedback definido:', feedbackText);
 
-                let actions = `<button class="action-btn" onclick="window.cancelAppointment('${appt.id}')">Cancelar</button>`;
+                let actions = `<button class="action-btn cancel" onclick="window.cancelAppointment('${appt.id}')">Cancelar</button>`;
                 if (appt.status === 'confirmed') {
                     actions += `
-                        <button class="action-btn" onclick="window.markCompleted('${appt.id}')">Marcar Realizado</button>
-                        <button class="action-btn" onclick="window.markNoShow('${appt.id}')">Marcar Não Compareceu</button>
+                        <button class="action-btn completed" onclick="window.markCompleted('${appt.id}')">Marcar Realizado</button>
+                        <button class="action-btn no-show" onclick="window.markNoShow('${appt.id}')">Marcar Não Compareceu</button>
                     `;
                 }
                 console.log('Ações definidas:', actions);
 
-                console.log('Criando linha da tabela...');
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td data-label="Cliente">${userName}</td>
-                    <td data-label="Barbeiro">${barberName}</td>
-                    <td data-label="Serviços">${services}</td>
-                    <td data-label="Data">${formattedDate}</td>
-                    <td data-label="Horário">${appt.time}</td>
-                    <td data-label="Valor">R$${appt.totalPrice.toFixed(2)}</td>
-                    <td data-label="Status">${statusPt}</td>
-                    <td data-label="Feedback">${feedbackText}</td>
-                    <td data-label="Ações">${actions}</td>
+                console.log('Criando card de agendamento...');
+                const card = document.createElement('div');
+                card.className = 'appointment-card';
+                card.innerHTML = `
+                    <p><strong>Cliente:</strong> ${userName}</p>
+                    <p><strong>Barbeiro:</strong> ${barberName}</p>
+                    <p><strong>Serviços:</strong> ${services}</p>
+                    <p><strong>Data:</strong> ${formattedDate}</p>
+                    <p><strong>Horário:</strong> ${appt.time}</p>
+                    <p><strong>Valor:</strong> R$${appt.totalPrice.toFixed(2)}</p>
+                    <p><strong>Status:</strong> ${statusPt}</p>
+                    <p><strong>Feedback:</strong> ${feedbackText}</p>
+                    <div class="appointment-actions">
+                        ${actions}
+                    </div>
                 `;
-                appointmentsList.appendChild(row);
-                console.log('Linha adicionada à tabela:', appt.id);
+                appointmentsList.appendChild(card);
+                console.log('Card adicionado:', appt.id);
 
                 totalAppointments++;
                 totalRevenue += appt.totalPrice;
@@ -356,13 +358,13 @@ async function loadAppointments(barberId = 'all', date = '') {
 
         if (totalAppointments === 0) {
             console.log('Nenhum agendamento corresponde aos filtros');
-            appointmentsList.innerHTML = '<tr><td colspan="9">Nenhum agendamento corresponde aos filtros.</td></tr>';
+            appointmentsList.innerHTML = '<p>Nenhum agendamento corresponde aos filtros.</p>';
         }
     } catch (error) {
         console.error('Erro ao carregar agendamentos:', error);
-        const appointmentsList = document.getElementById('appointmentsList').querySelector('tbody');
+        const appointmentsList = document.getElementById('appointmentsList');
         if (appointmentsList) {
-            appointmentsList.innerHTML = '<tr><td colspan="9">Erro ao carregar agendamentos: ' + error.message + '</td></tr>';
+            appointmentsList.innerHTML = '<p>Erro ao carregar agendamentos: ' + error.message + '</p>';
         }
         showPopup('Erro ao carregar agendamentos: ' + error.message);
     }
@@ -456,11 +458,11 @@ async function loadServices() {
 async function loadSchedules() {
     try {
         console.log('Carregando horários...');
-        const schedulesList = document.getElementById('schedulesList').querySelector('tbody');
+        const schedulesList = document.getElementById('schedulesList');
         schedulesList.innerHTML = '';
         const schedulesSnapshot = await getDocs(collection(db, 'schedules'));
         if (schedulesSnapshot.empty) {
-            schedulesList.innerHTML = '<tr><td colspan="5">Nenhum horário cadastrado.</td></tr>';
+            schedulesList.innerHTML = '<p>Nenhum horário cadastrado.</p>';
             return;
         }
 
@@ -477,18 +479,21 @@ async function loadSchedules() {
             const sched = docSnapshot.data();
             const dayPt = dayOfWeekPt[sched.dayOfWeek] || sched.dayOfWeek;
             const barberName = barberMap[sched.barberId] || sched.barberId;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td data-label="Dia">${dayPt} (Barbeiro ${barberName})</td>
-                <td data-label="Início">${sched.startTime}</td>
-                <td data-label="Fim">${sched.endTime}</td>
-                <td data-label="Pausa">${sched.breakStart ? `${sched.breakStart}-${sched.breakEnd}` : 'Nenhuma'}</td>
-                <td data-label="Ações">
-                    <button class="action-btn" onclick="editSchedule('${docSnapshot.id}', '${sched.dayOfWeek}', '${sched.barberId}', '${sched.startTime}', '${sched.endTime}', '${sched.breakStart || ''}', '${sched.breakEnd || ''}')">Editar</button>
+            const card = document.createElement('div');
+            card.className = 'schedule-card';
+            card.innerHTML = `
+                <div class="schedule-info">
+                    <h4>${dayPt} (Barbeiro ${barberName})</h4>
+                    <p>Início: ${sched.startTime}</p>
+                    <p>Fim: ${sched.endTime}</p>
+                    <p>Pausa: ${sched.breakStart ? `${sched.breakStart}-${sched.breakEnd}` : 'Nenhuma'}</p>
+                </div>
+                <div class="schedule-actions">
+                    <button class="action-btn edit-schedule" onclick="editSchedule('${docSnapshot.id}', '${sched.dayOfWeek}', '${sched.barberId}', '${sched.startTime}', '${sched.endTime}', '${sched.breakStart || ''}', '${sched.breakEnd || ''}')">Editar</button>
                     <button class="action-btn delete-schedule" data-id="${docSnapshot.id}">Excluir</button>
-                </td>
+                </div>
             `;
-            schedulesList.appendChild(row);
+            schedulesList.appendChild(card);
         });
 
         // Adiciona eventos aos botões de excluir

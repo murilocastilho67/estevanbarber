@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estevan Barber - Agendamento</title>
+    <title>Estevan Barber - Agendamentos</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Adiciona o Font Awesome via CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* Estilo do pop-up personalizado */
         .popup-overlay {
@@ -86,50 +88,43 @@
         <img src="assets/logo.png" alt="Estevan Barber Logo" class="logo">
         <h2>Estevan Barber</h2>
         <nav>
-            <a href="#" id="newAppointmentLink" class="active">Novo Agendamento</a>
-            <a href="#" id="viewAppointmentsLink">Meus Agendamentos</a>
+            <a href="#" id="newAppointmentLink" class="active"><i class="fas fa-calendar-plus"></i> Novo Agendamento</a>
+            <a href="#" id="viewAppointmentsLink"><i class="fas fa-calendar-check"></i> Meus Agendamentos</a>
+            <a href="#" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
     </div>
     <div class="main-content">
         <div id="appointmentForm" class="section active">
             <h2>Novo Agendamento</h2>
-            <label for="barber">Selecione o Barbeiro:</label>
-            <select id="barber" name="barber"></select>
-            <div class="services-container">
-                <h3>Serviços Disponíveis</h3>
-                <div id="servicesList"></div>
-                <div class="totals">
-                    <p>Total: R$<span id="totalPrice">0.00</span></p>
-                    <p>Tempo Estimado: <span id="totalTime">0</span> minutos</p>
+            <div class="appointment-form">
+                <label for="barber">Barbeiro:</label>
+                <select id="barber" name="barber"></select>
+                <div class="services-container">
+                    <h3>Serviços Disponíveis</h3>
+                    <div id="servicesList"></div>
+                    <div class="totals">
+                        <p>Total: R$<span id="totalPrice">0.00</span></p>
+                        <p>Duração: <span id="totalTime">0</span> min</p>
+                    </div>
+                </div>
+                <button id="chooseSchedule" disabled>Escolher um serviço</button>
+                <div id="calendar">
+                    <label for="date">Data:</label>
+                    <input type="date" id="date" name="date">
+                    <div id="timeSlots"></div>
+                    <div class="nav-buttons">
+                        <button id="next">Avançar</button>
+                    </div>
                 </div>
             </div>
-            <button id="chooseSchedule">Escolher Horário</button>
-            <div id="calendar">
-                <label for="date">Selecione a Data:</label>
-                <input type="date" id="date" name="date">
-                <div id="timeSlots"></div>
-            </div>
-            <button id="next">Avançar</button>
         </div>
+
         <div id="appointmentsSection" class="section">
             <h2>Meus Agendamentos</h2>
-            <table id="appointmentsTable">
-                <thead>
-                    <tr>
-                        <th>Barbeiro</th>
-                        <th>Serviços</th>
-                        <th>Data</th>
-                        <th>Horário</th>
-                        <th>Valor</th>
-                        <th>Status/Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Linhas serão preenchidas dinamicamente pelo JavaScript -->
-                </tbody>
-            </table>
+            <div id="appointmentsTable"></div>
         </div>
     </div>
+
     <!-- Pop-up personalizado -->
     <div class="popup-overlay" id="customPopup">
         <div class="popup">
@@ -141,6 +136,7 @@
             </div>
         </div>
     </div>
+
     <script type="module" src="js/services.js"></script>
 </body>
 </html>

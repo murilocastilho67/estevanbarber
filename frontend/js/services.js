@@ -1,5 +1,5 @@
 import { collection, getDocs, query, where, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 console.log('services.js carregado - Versão: 2025-06-02');
 console.log('Função doc carregada:', typeof doc === 'function');
@@ -333,8 +333,8 @@ async function loadAppointments() {
         console.log('Firestore inicializado:', !!db);
         console.log('Usuário autenticado:', !!auth.currentUser);
 
-        const appointmentsTable = document.getElementById('appointmentsTable').querySelector('tbody');
-        console.log('Tabela encontrada:', !!appointmentsTable);
+        const appointmentsTable = document.getElementById('appointmentsTable');
+        console.log('Container de agendamentos encontrado:', !!appointmentsTable);
         appointmentsTable.innerHTML = '';
 
         console.log('Construindo query de agendamentos...');
@@ -351,7 +351,7 @@ async function loadAppointments() {
 
         if (appointmentsSnapshot.empty) {
             console.log('Nenhum agendamento encontrado');
-            appointmentsTable.innerHTML = '<tr><td colspan="6">Nenhum agendamento encontrado.</td></tr>';
+            appointmentsTable.innerHTML = '<p>Nenhum agendamento encontrado.</p>';
             return;
         }
 
@@ -379,7 +379,7 @@ async function loadAppointments() {
                 console.error(`Erro ao buscar barbeiro ${appt.barberId}:`, error);
             }
 
-            console.log('Montando linha da tabela...');
+            console.log('Montando card de agendamento...');
             const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
             const dateParts = appt.date.split('-');
             const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
@@ -388,6 +388,7 @@ async function loadAppointments() {
                             appt.status === 'no-show' ? 'Não Compareceu' : appt.status;
 
             let action = '';
+            let actionMessage = '';
             if (appt.status === 'confirmed') {
                 console.log('Agendamento confirmado, verificando cancelamento...');
                 const apptDateTime = new Date(`${appt.date}T${appt.time}:00-03:00`);
@@ -396,8 +397,10 @@ async function loadAppointments() {
                 console.log('Data do agendamento:', apptDateTime, 'Agora:', now, 'Uma hora antes:', oneHourBefore);
                 if (now < oneHourBefore) {
                     action = `<button class="action-btn cancel-btn" data-id="${docSnapshot.id}">Cancelar</button>`;
+                    actionMessage = '';
                 } else {
-                    action = '<p>Não é possível cancelar. Contate a barbearia.</p>';
+                    action = '';
+                    actionMessage = 'Não é possível cancelar. Contate a barbearia.';
                 }
             } else if (appt.status === 'completed') {
                 console.log('Agendamento realizado, verificando feedback...');
@@ -417,24 +420,33 @@ async function loadAppointments() {
                 }
                 if (!hasFeedback) {
                     action = `<button class="action-btn feedback-btn" data-id="${docSnapshot.id}">Avaliar</button>`;
+                    actionMessage = '';
                 } else {
-                    action = '<p>Feedback já enviado.</p>';
+                    action = '';
+                    actionMessage = 'Feedback já enviado.';
                 }
+            } else {
+                action = '';
+                actionMessage = '';
             }
-            console.log('Ação definida:', action);
+            console.log('Ação definida:', action, 'Mensagem de ação:', actionMessage);
 
-            console.log('Criando linha da tabela...');
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td data-label="Barbeiro">${barberName}</td>
-                <td data-label="Serviços">${services}</td>
-                <td data-label="Data">${formattedDate}</td>
-                <td data-label="Horário">${appt.time}</td>
-                <td data-label="Valor">R$${appt.totalPrice.toFixed(2)}</td>
-                <td data-label="Status/Ação">${statusPt}${action}</td>
+            console.log('Criando card de agendamento...');
+            const card = document.createElement('div');
+            card.className = 'appointment-card';
+            card.innerHTML = `
+                <p><strong>Barbeiro:</strong> ${barberName}</p>
+                <p><strong>Serviços:</strong> ${services}</p>
+                <p><strong>Data:</strong> ${formattedDate}</p>
+                <p><strong>Horário:</strong> ${appt.time}</p>
+                <p><strong>Valor:</strong> R$${appt.totalPrice.toFixed(2)}</p>
+                <p><strong>Status:</strong> ${statusPt}${actionMessage ? ` - ${actionMessage}` : ''}</p>
+                <div class="appointment-actions" style="display: ${action ? 'flex' : 'none'}">
+                    ${action}
+                </div>
             `;
-            appointmentsTable.appendChild(row);
-            console.log('Linha adicionada à tabela:', docSnapshot.id);
+            appointmentsTable.appendChild(card);
+            console.log('Card adicionado à seção:', docSnapshot.id);
         }
 
         console.log('Configurando eventos dos botões...');
@@ -465,60 +477,110 @@ async function loadAppointments() {
         console.log('Eventos dos botões configurados');
     } catch (error) {
         console.error('Erro ao carregar agendamentos:', error);
-        const appointmentsTable = document.getElementById('appointmentsTable').querySelector('tbody');
+        const appointmentsTable = document.getElementById('appointmentsTable');
         if (appointmentsTable) {
-            appointmentsTable.innerHTML = '<tr><td colspan="6">Erro ao carregar agendamentos: ' + error.message + '</td></tr>';
+            appointmentsTable.innerHTML = '<p>Erro ao carregar agendamentos: ' + error.message + '</p>';
         }
     }
 }
 
-document.getElementById('barber').addEventListener('change', (e) => {
-    console.log('Barbeiro selecionado:', e.target.value);
-    loadServices(e.target.value);
-    document.getElementById('calendar').style.display = 'none';
-    document.getElementById('timeSlots').innerHTML = '';
-});
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM carregado, configurando eventos...');
 
-document.getElementById('chooseSchedule').addEventListener('click', () => {
-    console.log('Clicou em escolher horário');
-    document.getElementById('calendar').style.display = 'block';
-});
-
-document.getElementById('date').addEventListener('change', (e) => {
-    const barberId = document.getElementById('barber').value;
-    const date = e.target.value;
-    console.log('Data selecionada:', date, 'Barbeiro:', barberId);
-    if (barberId && date) {
-        loadAvailableTimes(barberId, date);
+    const barberSelect = document.getElementById('barber');
+    if (barberSelect) {
+        barberSelect.addEventListener('change', (e) => {
+            console.log('Barbeiro selecionado:', e.target.value);
+            loadServices(e.target.value);
+            document.getElementById('calendar').style.display = 'none';
+            document.getElementById('timeSlots').innerHTML = '';
+        });
+    } else {
+        console.error('Elemento barber não encontrado');
     }
-});
 
-document.getElementById('next').addEventListener('click', async () => {
-    const selectedTime = sessionStorage.getItem('selectedTime');
-    console.log('Clicou em próximo, horário selecionado:', selectedTime);
-    if (!selectedTime) {
-        await showPopup('Selecione um horário antes de avançar.');
-        return;
+    const chooseScheduleBtn = document.getElementById('chooseSchedule');
+    if (chooseScheduleBtn) {
+        chooseScheduleBtn.addEventListener('click', () => {
+            console.log('Clicou em escolher horário');
+            document.getElementById('calendar').style.display = 'block';
+        });
+    } else {
+        console.error('Elemento chooseSchedule não encontrado');
     }
-    window.location.href = 'confirmation.html';
-});
 
-// Alternar entre seções via barra lateral
-document.getElementById('newAppointmentLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log('Clicou em novo agendamento via barra lateral');
-    document.getElementById('appointmentForm').classList.add('active');
-    document.getElementById('appointmentsSection').classList.remove('active');
-    document.getElementById('newAppointmentLink').classList.add('active');
-    document.getElementById('viewAppointmentsLink').classList.remove('active');
-});
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.addEventListener('change', (e) => {
+            const barberId = document.getElementById('barber').value;
+            const date = e.target.value;
+            console.log('Data selecionada:', date, 'Barbeiro:', barberId);
+            if (barberId && date) {
+                loadAvailableTimes(barberId, date);
+            }
+        });
+    } else {
+        console.error('Elemento date não encontrado');
+    }
 
-document.getElementById('viewAppointmentsLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log('Clicou em visualizar agendamentos via barra lateral');
-    document.getElementById('appointmentForm').classList.remove('active');
-    document.getElementById('appointmentsSection').classList.add('active');
-    document.getElementById('newAppointmentLink').classList.remove('active');
-    document.getElementById('viewAppointmentsLink').classList.add('active');
-    loadAppointments(); // Carrega os agendamentos ao exibir a seção
+    const nextBtn = document.getElementById('next');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', async () => {
+            const selectedTime = sessionStorage.getItem('selectedTime');
+            console.log('Clicou em próximo, horário selecionado:', selectedTime);
+            if (!selectedTime) {
+                await showPopup('Selecione um horário antes de avançar.');
+                return;
+            }
+            window.location.href = 'confirmation.html';
+        });
+    } else {
+        console.error('Elemento next não encontrado');
+    }
+
+    const newAppointmentLink = document.getElementById('newAppointmentLink');
+    if (newAppointmentLink) {
+        newAppointmentLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clicou em novo agendamento via barra lateral');
+            document.getElementById('appointmentForm').classList.add('active');
+            document.getElementById('appointmentsSection').classList.remove('active');
+            document.getElementById('newAppointmentLink').classList.add('active');
+            document.getElementById('viewAppointmentsLink').classList.remove('active');
+        });
+    } else {
+        console.error('Elemento newAppointmentLink não encontrado');
+    }
+
+    const viewAppointmentsLink = document.getElementById('viewAppointmentsLink');
+    if (viewAppointmentsLink) {
+        viewAppointmentsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clicou em visualizar agendamentos via barra lateral');
+            document.getElementById('appointmentForm').classList.remove('active');
+            document.getElementById('appointmentsSection').classList.add('active');
+            document.getElementById('newAppointmentLink').classList.remove('active');
+            document.getElementById('viewAppointmentsLink').classList.add('active');
+            loadAppointments(); // Carrega os agendamentos ao exibir a seção
+        });
+    } else {
+        console.error('Elemento viewAppointmentsLink não encontrado');
+    }
+
+    const navLogout = document.getElementById('nav-logout');
+    if (navLogout) {
+        navLogout.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('Clicou em Sair');
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Erro ao sair:', error);
+                showPopup('Erro ao sair: ' + error.message);
+            }
+        });
+    } else {
+        console.error('Elemento nav-logout não encontrado');
+    }
 });

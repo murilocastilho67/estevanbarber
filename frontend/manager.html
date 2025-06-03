@@ -117,22 +117,7 @@
                 <label for="dateFilter">Data:</label>
                 <input type="date" id="dateFilter">
             </div>
-            <table id="appointmentsList">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Barbeiro</th>
-                        <th>Serviços</th>
-                        <th>Data</th>
-                        <th>Horário</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th>Feedback</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div id="appointmentsList"></div>
             <div class="summary">
                 <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
                 <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
@@ -182,18 +167,7 @@
                 <input type="time" id="breakEnd" name="breakEnd">
                 <button type="submit">Salvar Horários</button>
             </form>
-            <table id="schedulesList">
-                <thead>
-                    <tr>
-                        <th>Dia</th>
-                        <th>Início</th>
-                        <th>Fim</th>
-                        <th>Pausa</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div id="schedulesList"></div>
         </div>
     </div>
 
