@@ -9,23 +9,6 @@ console.log('Função where carregada:', typeof where === 'function');
 const auth = getAuth();
 const db = window.db;
 
-// Verifica autenticação
-auth.onAuthStateChanged((user) => {
-    if (!user) {
-        console.error('Usuário não autenticado. Redirecionando para login...');
-        window.location.href = 'index.html';
-    } else {
-        console.log('Usuário autenticado:', user.email);
-        // Carrega os barbeiros (necessário para os filtros de agendamentos)
-        loadBarbers().then(() => {
-            // Após carregar os barbeiros, mostra a seção de agendamentos por padrão
-            showSection('appointments-section');
-            // Carrega os agendamentos
-            loadAppointments();
-        });
-    }
-});
-
 // Função para pop-up personalizado
 function showPopup(message, isConfirm = false, onConfirm = null) {
     return new Promise((resolve) => {
@@ -262,6 +245,7 @@ async function loadAppointments(barberId = 'all', date = '') {
             if (matchesBarber && matchesDate) {
                 console.log('Agendamento corresponde aos filtros');
                 let userName = 'Desconhecido';
+                let userPhone = '';
                 try {
                     console.log('Buscando usuário com ID:', appt.userId);
                     const userRef = doc(db, 'users', appt.userId);
@@ -280,6 +264,9 @@ async function loadAppointments(barberId = 'all', date = '') {
                         } else {
                             console.warn('Nenhum campo de nome encontrado no usuário:', appt.userId);
                         }
+                        // Ajustado pra buscar phoneNumber em vez de phone
+                        userPhone = userData.phoneNumber ? userData.phoneNumber.replace(/\D/g, '') : '';
+                        console.log('Telefone do usuário:', userPhone);
                     } else {
                         console.warn(`Usuário ${appt.userId} não encontrado`);
                     }
@@ -324,6 +311,15 @@ async function loadAppointments(barberId = 'all', date = '') {
                         <button class="action-btn completed" onclick="window.markCompleted('${appt.id}')">Marcar Realizado</button>
                         <button class="action-btn no-show" onclick="window.markNoShow('${appt.id}')">Marcar Não Compareceu</button>
                     `;
+                    // Adiciona o botão "Enviar Lembrete" se o telefone do cliente estiver disponível
+                    if (userPhone) {
+                        const reminderSent = appt.reminderSent || false;
+                        actions += `
+                            <button class="action-btn send-reminder" data-id="${appt.id}" data-client-name="${userName}" data-barber-name="${barberName}" data-time="${appt.time}" data-phone="${userPhone}" data-date="${formattedDate}" ${reminderSent ? 'disabled' : ''}>
+                                ${reminderSent ? 'Lembrete Enviado' : 'Enviar Lembrete'}
+                            </button>
+                        `;
+                    }
                 }
                 console.log('Ações definidas:', actions);
 
@@ -350,6 +346,39 @@ async function loadAppointments(barberId = 'all', date = '') {
                 totalRevenue += appt.totalPrice;
             }
         }
+
+        console.log('Configurando eventos dos botões de lembrete...');
+        document.querySelectorAll('.send-reminder').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const apptId = btn.dataset.id;
+                const clientName = btn.dataset.clientName;
+                const barberName = btn.dataset.barberName;
+                const time = btn.dataset.time;
+                const phone = btn.dataset.phone;
+                const date = btn.dataset.date;
+
+                try {
+                    // Gera o link do WhatsApp
+                    const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
+                    const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
+                    console.log('Link do WhatsApp gerado:', whatsappLink);
+
+                    // Marca o lembrete como enviado no Firestore
+                    await setDoc(doc(db, 'appointments', apptId), { reminderSent: true }, { merge: true });
+                    console.log('Lembrete marcado como enviado para o agendamento:', apptId);
+
+                    // Atualiza o botão
+                    btn.textContent = 'Lembrete Enviado';
+                    btn.disabled = true;
+
+                    // Abre o link do WhatsApp
+                    window.open(whatsappLink, '_blank');
+                } catch (error) {
+                    console.error('Erro ao enviar lembrete:', error);
+                    showPopup('Erro ao enviar lembrete: ' + error.message);
+                }
+            });
+        });
 
         console.log('Atualizando totais...');
         document.getElementById('totalAppointments').textContent = totalAppointments;

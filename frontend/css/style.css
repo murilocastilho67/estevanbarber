@@ -641,6 +641,21 @@ form#scheduleForm button {
     background: #46b8da;
 }
 
+.appointment-card .action-btn.send-reminder {
+    background: #25d366; /* Cor do WhatsApp */
+    color: #fff;
+}
+
+.appointment-card .action-btn.send-reminder:hover:not(:disabled) {
+    background: #1ebe57;
+}
+
+.appointment-card .action-btn.send-reminder:disabled {
+    background: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+
 /* Estilo para cards de horários */
 #schedulesList {
     display: grid;
