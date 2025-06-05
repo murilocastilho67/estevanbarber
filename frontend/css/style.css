@@ -18,7 +18,56 @@ body.centered {
 
 body.manager-layout {
     display: flex;
-    flex-direction: row;
+    flex-direction: column; /* Muda pra column pra incluir o menu toggle */
+    position: relative; /* Pra posicionar o menu toggle */
+}
+
+.top-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #4b2e1e;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1002; /* Fica acima de tudo */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-title {
+    margin: 0;
+    font-size: 1.5rem;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.menu-toggle:hover {
+    color: #ccc;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.logout-btn:hover {
+    color: #ccc;
 }
 
 .sidebar {
@@ -28,16 +77,60 @@ body.manager-layout {
     padding: 1rem;
     position: fixed;
     height: 100%;
-    overflow-y: auto;
     top: 0;
     left: 0;
+    transform: translateX(-100%); /* Esconde o menu fora da tela à esquerda */
     transition: transform 0.3s ease-in-out;
+    z-index: 1000; /* Fica acima do main-content */
+    overflow-y: auto;
+}
+
+.sidebar.open {
+    transform: translateX(0); /* Mostra o menu */
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Fundo escurecido */
+    z-index: 999; /* Fica entre o main-content e a sidebar */
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.menu-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.menu-close:hover {
+    color: #ccc;
 }
 
 .sidebar .logo {
     display: block;
     max-width: 150px;
-    margin: 0 auto 1rem;
+    margin: 0;
 }
 
 .sidebar h2 {
@@ -77,12 +170,14 @@ body.manager-layout {
 }
 
 .main-content {
-    margin-left: 250px;
     padding: 2rem;
     flex-grow: 1;
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 0; /* Remove a margem esquerda fixa */
+    margin-top: 60px; /* Ajusta pra não sobrepor o header fixo */
+    transition: padding-left 0.3s ease-in-out; /* Animação suave pro padding */
 }
 
 .container {
@@ -724,10 +819,20 @@ form#scheduleForm button {
         flex-direction: column;
     }
 
+    .top-header {
+        padding: 0.5rem;
+    }
+
+    .header-title {
+        font-size: 1.2rem;
+    }
+
+    .menu-toggle, .logout-btn {
+        font-size: 1.3rem;
+    }
+
     .sidebar {
-        width: 100%;
-        height: auto;
-        position: static;
+        width: 200px; /* Reduz a largura no mobile */
         padding: 0.5rem;
     }
 
@@ -741,10 +846,8 @@ form#scheduleForm button {
     }
 
     .sidebar nav {
-        flex-direction: row;
-        justify-content: center;
+        flex-direction: column;
         gap: 0.5rem;
-        flex-wrap: wrap;
     }
 
     .sidebar a {
@@ -753,10 +856,10 @@ form#scheduleForm button {
     }
 
     .main-content {
-        margin-left: 0;
         padding: 1rem;
         border-radius: 0;
         box-shadow: none;
+        margin-top: 50px; /* Ajusta pro header no mobile */
     }
 
     .appointment-form {
@@ -962,6 +1065,18 @@ form#scheduleForm button {
 
     h2, h3 {
         font-size: 1rem;
+    }
+
+    .header-title {
+        font-size: 1rem;
+    }
+
+    .menu-toggle, .logout-btn {
+        font-size: 1.2rem;
+    }
+
+    .main-content {
+        margin-top: 45px; /* Ajusta pro header no mobile pequeno */
     }
 
     .time-slot {
