@@ -4,13 +4,14 @@ import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices } from './services.js';
 import { initSchedules } from './schedules.js';
-import { initStock } from './stock.js';
-import { initCashFlow } from './cashflow.js';
+import { initStock, loadStock } from './stock.js';
+import { initCashFlow } from './cashFlow.js';
 import { initDashboard } from './dashboard.js';
 
 console.log('manager.js carregado - Versão: 2025-06-05');
 
 const auth = getAuth();
+console.log('Auth inicializado:', !!auth);
 let db = window.db;
 
 // Função pra esperar o Firestore estar inicializado
@@ -45,6 +46,35 @@ async function handleLogout() {
         showPopup('Erro ao sair: ' + error.message);
     }
 }
+
+auth.onAuthStateChanged((user) => {
+    console.log('onAuthStateChanged disparado');
+    if (!auth) {
+        console.error('Auth não inicializado');
+        return;
+    }
+    if (isLoadingBarbers) {
+        console.log('loadBarbers já em andamento, ignorando chamada duplicada.');
+        return;
+    }
+    if (!user) {
+        console.error('Usuário não autenticado. Redirecionando para login...');
+        window.location.href = 'index.html';
+        return;
+    }
+    console.log('Usuário autenticado:', user.email);
+    isLoadingBarbers = true;
+    loadBarbers().catch(error => {
+        console.error('Erro no onAuthStateChanged:', error);
+        const servicesList = document.getElementById('servicesList');
+        if (servicesList) {
+            servicesList.innerHTML = '<p>Erro ao verificar autenticação: ' + error.message + '</p>';
+        }
+    }).finally(() => {
+        isLoadingBarbers = false;
+        console.log('loadBarbers finalizado');
+    });
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM carregado, inicializando painel do gerente...');

@@ -1,21 +1,3 @@
-const dayOfWeekPt = {
-    'Monday': 'Segunda',
-    'Tuesday': 'Terça',
-    'Wednesday': 'Quarta',
-    'Thursday': 'Quinta',
-    'Friday': 'Sexta',
-    'Saturday': 'Sábado'
-};
-
-const dayOfWeekEn = {
-    'Segunda': 'Monday',
-    'Terça': 'Tuesday',
-    'Quarta': 'Wednesday',
-    'Quinta': 'Thursday',
-    'Sexta': 'Friday',
-    'Sábado': 'Saturday'
-};
-
 function showPopup(message, isConfirm = false, onConfirm = null) {
     return new Promise((resolve) => {
         console.log('Mostrando pop-up:', message, 'Confirm:', isConfirm);
@@ -68,12 +50,47 @@ function showSection(sectionId) {
     } else {
         console.error('Seção não encontrada:', sectionId);
     }
-    const navLink = document.getElementById(`nav-${sectionId.split('-')[0]}`);
+    const navLink = document.getElementById(sectionId === 'appointmentForm' ? 'newAppointmentLink' : 
+        sectionId === 'appointments-section' ? 'nav-appointments' :
+        sectionId === 'barbers-section' ? 'nav-barbers' :
+        sectionId === 'services-section' ? 'nav-services' :
+        sectionId === 'schedules-section' ? 'nav-schedules' :
+        sectionId === 'stock-section' ? 'nav-stock' :
+        sectionId === 'cashflow-section' ? 'nav-cashflow' :
+        sectionId === 'dashboard-section' ? 'nav-dashboard' : '');
     if (navLink) {
         navLink.classList.add('active');
     } else {
-        console.error('Link de navegação não encontrado:', `nav-${sectionId.split('-')[0]}`);
+        console.error('Link de navegação não encontrado:', sectionId);
     }
 }
 
-export { dayOfWeekPt, dayOfWeekEn, showPopup, showSection };
+// Função pra traduzir dias da semana de português pra inglês
+function dayOfWeekEn(dayPt) {
+    const dayMap = {
+        'Segunda': 'Monday',
+        'Terça': 'Tuesday',
+        'Quarta': 'Wednesday',
+        'Quinta': 'Thursday',
+        'Sexta': 'Friday',
+        'Sábado': 'Saturday',
+        'Domingo': 'Sunday'
+    };
+    return dayMap[dayPt] || dayPt;
+}
+
+// Função pra traduzir dias da semana de inglês pra português
+function dayOfWeekPt(dayEn) {
+    const dayMap = {
+        'Monday': 'Segunda',
+        'Tuesday': 'Terça',
+        'Wednesday': 'Quarta',
+        'Thursday': 'Quinta',
+        'Friday': 'Sexta',
+        'Saturday': 'Sábado',
+        'Sunday': 'Domingo'
+    };
+    return dayMap[dayEn] || dayEn;
+}
+
+export { showPopup, showSection, dayOfWeekEn, dayOfWeekPt };

@@ -282,7 +282,7 @@ a:hover {
     text-align: left;
 }
 
-#servicesList, #appointmentsList, #barbersList, #schedulesList {
+#servicesList, #appointmentsList, #barbersList, #schedulesList, #stockList, #stockMovementsList {
     text-align: left;
     margin-bottom: 1rem;
 }
@@ -301,13 +301,13 @@ a:hover {
     font-size: 1rem;
 }
 
-#barbersList div, #schedulesList div {
+#barbersList div, #schedulesList div, #stockList div, #stockMovementsList div {
     margin: 0;
     padding: 0.5rem 0;
     /* Removido border-bottom pra tirar o risco */
 }
 
-#servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child {
+#servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child, #stockList div:last-child, #stockMovementsList div:last-child {
     border-bottom: none;
 }
 
@@ -501,7 +501,7 @@ th {
 }
 
 /* Estilos para formulários de cadastro no manager.html */
-form#barberForm, form#serviceForm, form#scheduleForm {
+form#barberForm, form#serviceForm, form#scheduleForm, form#stockForm {
     background: #fafafa;
     padding: 1.5rem;
     border-radius: 8px;
@@ -510,44 +510,44 @@ form#barberForm, form#serviceForm, form#scheduleForm {
     border-left: 4px solid #4b2e1e;
 }
 
-form#barberForm label, form#serviceForm label, form#scheduleForm label {
+form#barberForm label, form#serviceForm label, form#scheduleForm label, form#stockForm label {
     font-weight: 600;
     color: #4b2e1e;
 }
 
-form#barberForm input, form#serviceForm input, form#scheduleForm input,
+form#barberForm input, form#serviceForm input, form#scheduleForm input, form#stockForm input,
 form#barberForm select, form#serviceForm select, form#scheduleForm select {
     background: #fff;
     border: 1px solid #e0e0e0;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-form#barberForm button, form#serviceForm button, form#scheduleForm button {
+form#barberForm button, form#serviceForm button, form#scheduleForm button, form#stockForm button {
     background: #4b2e1e;
     color: #fff;
     font-weight: 600;
     transition: background-color 0.3s, transform 0.1s;
 }
 
-form#barberForm button:hover, form#serviceForm button:hover, form#scheduleForm button:hover {
+form#barberForm button:hover, form#serviceForm button:hover, form#scheduleForm button:hover, form#stockForm button:hover {
     background: #6b4e31;
     transform: scale(1.02);
 }
 
-form#scheduleForm {
+form#scheduleForm, form#stockForm {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
 }
 
-form#scheduleForm button {
+form#scheduleForm button, form#stockForm button {
     grid-column: span 2;
 }
 
 /* Estilo para cards de serviços */
 #servicesList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Mesma lógica dos barbeiros */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem;
 }
 
@@ -561,16 +561,24 @@ form#scheduleForm button {
     justify-content: space-between;
     align-items: center;
     transition: transform 0.2s;
+    width: 100%;
 }
 
 .service-card:hover {
     transform: translateY(-2px);
 }
 
+.service-card .service-info {
+    flex-grow: 1;
+}
+
 .service-card .service-info h4 {
     margin: 0 0 0.5rem;
     color: #4b2e1e;
     font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .service-card .service-info p {
@@ -754,7 +762,7 @@ form#scheduleForm button {
 /* Estilo para cards de horários */
 #schedulesList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Cards no desktop */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem;
 }
 
@@ -768,16 +776,24 @@ form#scheduleForm button {
     justify-content: space-between;
     align-items: center;
     transition: transform 0.2s;
+    width: 100%;
 }
 
 .schedule-card:hover {
     transform: translateY(-2px);
 }
 
+.schedule-card .schedule-info {
+    flex-grow: 1;
+}
+
 .schedule-card .schedule-info h4 {
     margin: 0 0 0.5rem;
     color: #4b2e1e;
     font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .schedule-card .schedule-info p {
@@ -811,6 +827,120 @@ form#scheduleForm button {
 
 .schedule-card .action-btn.delete-schedule:hover {
     background: #c9302c;
+}
+
+/* Estilo para cards de estoque */
+#stockList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.stock-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+    width: 100%;
+}
+
+.stock-card:hover {
+    transform: translateY(-2px);
+}
+
+.stock-card .stock-info {
+    flex-grow: 1;
+}
+
+.stock-card .stock-info h4 {
+    margin: 0 0 0.5rem;
+    color: #4b2e1e;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stock-card .stock-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+}
+
+.stock-card .stock-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.stock-card .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.stock-card .action-btn.edit-stock {
+    background: #4b2e1e;
+    color: #fff;
+}
+
+.stock-card .action-btn.edit-stock:hover {
+    background: #6b4e31;
+}
+
+.stock-card .action-btn.delete-stock {
+    background: #d9534f;
+    color: #fff;
+}
+
+.stock-card .action-btn.delete-stock:hover {
+    background: #c9302c;
+}
+
+.stock-card .action-btn.stock-entry {
+    background: #5cb85c;
+    color: #fff;
+}
+
+.stock-card .action-btn.stock-entry:hover {
+    background: #4cae4c;
+}
+
+.stock-card .action-btn.stock-exit {
+    background: #f0ad4e;
+    color: #fff;
+}
+
+.stock-card .action-btn.stock-exit:hover {
+    background: #ec971f;
+}
+
+/* Estilo para cards de movimentações de estoque */
+#stockMovementsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.movement-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    width: 100%;
+}
+
+.movement-card:hover {
+    transform: translateY(-2px);
+}
+
+.movement-card p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
 }
 
 /* Responsividade */
@@ -961,7 +1091,40 @@ form#scheduleForm button {
         text-align: center;
     }
 
-    /* Transforma a tabela de horários em cards no mobile (já tá assim, só ajustando) */
+    /* Transforma os cards de serviços em layout vertical no mobile */
+    #servicesList {
+        grid-template-columns: 1fr; /* Um card por linha no mobile */
+    }
+
+    .service-card {
+        padding: 0.8rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .service-card .service-info h4 {
+        font-size: 1rem;
+    }
+
+    .service-card .service-info p {
+        font-size: 0.8rem;
+    }
+
+    .service-card .service-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .service-card .action-btn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* Transforma os cards de horários em layout vertical no mobile */
     #schedulesList {
         grid-template-columns: 1fr; /* Um card por linha no mobile */
     }
@@ -994,6 +1157,52 @@ form#scheduleForm button {
         text-align: center;
     }
 
+    /* Transforma os cards de estoque em layout vertical no mobile */
+    #stockList {
+        grid-template-columns: 1fr; /* Um card por linha no mobile */
+    }
+
+    .stock-card {
+        padding: 0.8rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stock-card .stock-info h4 {
+        font-size: 1rem;
+    }
+
+    .stock-card .stock-info p {
+        font-size: 0.8rem;
+    }
+
+    .stock-card .stock-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .stock-card .action-btn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* Transforma os cards de movimentações em layout vertical no mobile */
+    #stockMovementsList {
+        grid-template-columns: 1fr; /* Um card por linha no mobile */
+    }
+
+    .movement-card {
+        padding: 0.8rem;
+    }
+
+    .movement-card p {
+        font-size: 0.8rem;
+    }
+
     .action-btn {
         padding: 0.3rem 0.6rem;
         font-size: 0.9rem;
@@ -1001,51 +1210,47 @@ form#scheduleForm button {
         transition: background-color 0.3s;
     }
 
-    #barbersList div, #schedulesList div {
+    #barbersList div, #schedulesList div, #stockList div, #stockMovementsList div {
         padding: 0.3rem 0;
         font-size: 0.8rem;
     }
 
     /* Responsividade para formulários de cadastro */
-    form#barberForm, form#serviceForm, form#scheduleForm {
+    form#barberForm, form#serviceForm, form#scheduleForm, form#stockForm {
         padding: 1rem;
     }
 
-    form#scheduleForm {
+    form#scheduleForm, form#stockForm {
         grid-template-columns: 1fr;
     }
 
-    form#scheduleForm button {
+    form#scheduleForm button, form#stockForm button {
         grid-column: span 1;
     }
 
-    /* Responsividade para cards de serviços e barbeiros */
-    #servicesList, #barbersList {
+    /* Responsividade para cards de barbeiros */
+    #barbersList {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Dinâmico: 2 cards por linha se couber */
     }
 
-    .service-card, .barber-card {
+    .barber-card {
         padding: 0.8rem;
         flex-direction: column; /* Muda o layout dos cards pra vertical no mobile */
         align-items: flex-start; /* Alinha o conteúdo à esquerda */
     }
 
-    .service-card .service-info h4, .barber-card .barber-info h4 {
+    .barber-card .barber-info h4 {
         font-size: 1rem;
     }
 
-    .service-card .service-info p {
-        font-size: 0.8rem;
-    }
-
-    .service-card .service-actions, .barber-card .barber-actions {
+    .barber-card .barber-actions {
         flex-direction: column; /* Empilha os botões verticalmente */
         gap: 0.5rem;
         width: 100%; /* Faz os botões ocuparem toda a largura do card */
         margin-top: 0.5rem;
     }
 
-    .service-card .action-btn, .barber-card .action-btn {
+    .barber-card .action-btn {
         width: 100%; /* Botões ocupam a largura total */
         padding: 0.5rem; /* Aumenta o padding pra facilitar o clique */
         font-size: 0.9rem; /* Tamanho de fonte maior pra legibilidade */
@@ -1098,6 +1303,19 @@ form#scheduleForm button {
         font-size: 0.85rem;
     }
 
+    #servicesList {
+        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+    }
+
+    .service-card .service-info p {
+        font-size: 0.75rem;
+    }
+
+    .service-card .action-btn {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+
     #schedulesList {
         grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
     }
@@ -1109,6 +1327,27 @@ form#scheduleForm button {
     .schedule-card .action-btn {
         padding: 0.4rem;
         font-size: 0.85rem;
+    }
+
+    #stockList {
+        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+    }
+
+    .stock-card .stock-info p {
+        font-size: 0.75rem;
+    }
+
+    .stock-card .action-btn {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    #stockMovementsList {
+        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+    }
+
+    .movement-card p {
+        font-size: 0.75rem;
     }
 
     .action-btn {
@@ -1125,7 +1364,7 @@ form#scheduleForm button {
         font-size: 0.8rem;
     }
 
-    #barbersList div, #servicesList div, #schedulesList div {
+    #barbersList div, #servicesList div, #schedulesList div, #stockList div, #stockMovementsList div {
         font-size: 0.75rem;
     }
 }

@@ -1,10 +1,7 @@
 import { collection, getDocs, query, where, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
-console.log('services.js carregado - Versão: 2025-06-02');
-console.log('Função doc carregada:', typeof doc === 'function');
-console.log('Função query carregada:', typeof query === 'function');
-console.log('Função where carregada:', typeof where === 'function');
+console.log('services.js carregado - Versão: 2025-06-05');
 
 const auth = getAuth();
 const db = window.db;
@@ -46,6 +43,41 @@ function showPopup(message, isConfirm = false, onConfirm = null) {
 
         popup.style.display = 'flex';
     });
+}
+
+// Função para mostrar/esconder seções
+function showSection(sectionId) {
+    console.log('Mostrando seção:', sectionId);
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.classList.remove('active');
+    });
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.classList.add('active');
+    } else {
+        console.error('Seção não encontrada:', sectionId);
+    }
+    const navLink = document.getElementById(sectionId === 'appointmentForm' ? 'newAppointmentLink' : 'viewAppointmentsLink');
+    if (navLink) {
+        navLink.classList.add('active');
+    } else {
+        console.error('Link de navegação não encontrado:', sectionId);
+    }
+}
+
+// Função de logout
+async function handleLogout() {
+    console.log('Clicou em Sair');
+    try {
+        await signOut(auth);
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Erro ao sair:', error);
+        showPopup('Erro ao sair: ' + error.message);
+    }
 }
 
 // Flag pra evitar múltiplas chamadas ao loadBarbers
@@ -363,7 +395,6 @@ async function loadAppointments() {
 
             let barberName = 'Desconhecido';
             try {
-                console.log('Verificando função doc:', typeof doc === 'function');
                 console.log('Buscando barbeiro com ID:', appt.barberId);
                 const barberRef = doc(db, 'barbers', appt.barberId);
                 console.log('Referência do barbeiro criada:', barberRef.path);
@@ -487,6 +518,70 @@ async function loadAppointments() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM carregado, configurando eventos...');
 
+    // Configura o menu toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const menuClose = document.getElementById('menuClose');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.getElementById('mainContent');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (menuToggle && menuClose && sidebar && sidebarOverlay && mainContent && logoutBtn) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+            menuToggle.style.display = 'none'; // Esconde o botão de hamburger
+            logoutBtn.style.display = 'none'; // Esconde o botão de logout
+        });
+
+        menuClose.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+            menuToggle.style.display = 'block'; // Mostra o botão de hamburger
+            logoutBtn.style.display = 'block'; // Mostra o botão de logout
+        });
+
+        // Fecha o menu ao clicar no overlay
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+            menuToggle.style.display = 'block'; // Mostra o botão de hamburger
+            logoutBtn.style.display = 'block'; // Mostra o botão de logout
+        });
+
+        // Fecha o menu ao clicar em um link da sidebar
+        sidebar.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+                menuToggle.style.display = 'block'; // Mostra o botão de hamburger
+                logoutBtn.style.display = 'block'; // Mostra o botão de logout
+            });
+        });
+    } else {
+        console.error('Elementos do menu não encontrados');
+    }
+
+    // Configura os eventos de logout
+    const navLogout = document.getElementById('nav-logout');
+    if (navLogout) {
+        navLogout.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await handleLogout();
+        });
+    } else {
+        console.error('Elemento nav-logout não encontrado');
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await handleLogout();
+        });
+    } else {
+        console.error('Elemento logoutBtn não encontrado');
+    }
+
     const barberSelect = document.getElementById('barber');
     if (barberSelect) {
         barberSelect.addEventListener('change', (e) => {
@@ -543,10 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newAppointmentLink.addEventListener('click', (e) => {
             e.preventDefault();
             console.log('Clicou em novo agendamento via barra lateral');
-            document.getElementById('appointmentForm').classList.add('active');
-            document.getElementById('appointmentsSection').classList.remove('active');
-            document.getElementById('newAppointmentLink').classList.add('active');
-            document.getElementById('viewAppointmentsLink').classList.remove('active');
+            showSection('appointmentForm');
         });
     } else {
         console.error('Elemento newAppointmentLink não encontrado');
@@ -557,30 +649,13 @@ document.addEventListener('DOMContentLoaded', () => {
         viewAppointmentsLink.addEventListener('click', (e) => {
             e.preventDefault();
             console.log('Clicou em visualizar agendamentos via barra lateral');
-            document.getElementById('appointmentForm').classList.remove('active');
-            document.getElementById('appointmentsSection').classList.add('active');
-            document.getElementById('newAppointmentLink').classList.remove('active');
-            document.getElementById('viewAppointmentsLink').classList.add('active');
+            showSection('appointmentsSection');
             loadAppointments(); // Carrega os agendamentos ao exibir a seção
         });
     } else {
         console.error('Elemento viewAppointmentsLink não encontrado');
     }
 
-    const navLogout = document.getElementById('nav-logout');
-    if (navLogout) {
-        navLogout.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log('Clicou em Sair');
-            try {
-                await signOut(auth);
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Erro ao sair:', error);
-                showPopup('Erro ao sair: ' + error.message);
-            }
-        });
-    } else {
-        console.error('Elemento nav-logout não encontrado');
-    }
+    // Exibe a seção "Novo Agendamento" automaticamente ao carregar a página
+    showSection('appointmentForm');
 });

@@ -44,6 +44,11 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             return dateA - dateB;
         });
 
+        // Obtém a data de hoje no formato YYYY-MM-DD
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0]; // Ex.: "2025-06-05"
+        console.log('Data de hoje:', todayString);
+
         let totalAppointments = 0;
         let totalRevenue = 0;
 
@@ -54,9 +59,11 @@ async function loadAppointments(db, barberId = 'all', date = '') {
 
             const matchesBarber = barberId === 'all' || appt.barberId === barberId;
             const matchesDate = !date || appt.date === date;
-            console.log('Matches - Barbeiro:', matchesBarber, 'Data:', matchesDate);
+            // Filtra agendamentos a partir da data de hoje
+            const isFutureOrToday = appt.date >= todayString;
+            console.log('Matches - Barbeiro:', matchesBarber, 'Data:', matchesDate, 'Futuro ou Hoje:', isFutureOrToday);
 
-            if (matchesBarber && matchesDate) {
+            if (matchesBarber && matchesDate && isFutureOrToday) {
                 console.log('Agendamento corresponde aos filtros');
                 let userName = 'Desconhecido';
                 let userPhone = '';

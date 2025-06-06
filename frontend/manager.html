@@ -197,7 +197,43 @@
 
         <div id="stock-section" class="section">
             <h2>Gerenciar Estoque</h2>
-            <p>Seção de estoque em desenvolvimento.</p>
+            <form id="stockForm">
+                <input type="hidden" id="productId" name="productId">
+                <label for="productName">Nome do Produto:</label>
+                <input type="text" id="productName" name="productName" required>
+                <label for="costPrice">Valor Pago (Custo por Unidade - R$):</label>
+                <input type="number" id="costPrice" name="costPrice" step="0.01" min="0" required>
+                <label for="sellingPrice">Valor de Venda (por Unidade - R$):</label>
+                <input type="number" id="sellingPrice" name="sellingPrice" step="0.01" min="0" required>
+                <label for="supplier">Fornecedor:</label>
+                <input type="text" id="supplier" name="supplier">
+                <label for="category">Categoria:</label>
+                <select id="category" name="category">
+                    <option value="Higiene">Higiene</option>
+                    <option value="Estilização">Estilização</option>
+                    <option value="Barba">Barba</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <button type="submit">Adicionar Produto</button>
+            </form>
+            <div id="stockList"></div>
+            <div class="summary">
+                <p>Valor Total do Estoque (Custo): R$<span id="totalStockValue">0.00</span></p>
+            </div>
+            <h3>Histórico de Movimentações</h3>
+            <div class="filter">
+                <label for="movementProductFilter">Produto:</label>
+                <select id="movementProductFilter" name="movementProductFilter">
+                    <option value="all">Todos</option>
+                </select>
+                <label for="movementTypeFilter">Tipo:</label>
+                <select id="movementTypeFilter" name="movementTypeFilter">
+                    <option value="all">Todos</option>
+                    <option value="entry">Entradas</option>
+                    <option value="exit">Saídas</option>
+                </select>
+            </div>
+            <div id="stockMovementsList"></div>
         </div>
 
         <div id="cashflow-section" class="section">
@@ -220,6 +256,29 @@
                 <button class="popup-button confirm" id="popupConfirm">OK</button>
                 <button class="popup-button cancel" id="popupCancel" style="display: none;">Cancelar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Pop-up para entrada/saída de estoque -->
+    <div class="popup-overlay" id="stockMovementPopup">
+        <div class="popup">
+            <h3 id="stockMovementTitle"></h3>
+            <form id="stockMovementForm">
+                <input type="hidden" id="movementProductId" name="movementProductId">
+                <input type="hidden" id="movementType" name="movementType">
+                <label for="movementQuantity">Quantidade:</label>
+                <input type="number" id="movementQuantity" name="movementQuantity" min="1" required>
+                <label for="movementUnitCost" id="movementUnitCostLabel" style="display: none;">Valor Pago por Unidade (R$):</label>
+                <input type="number" id="movementUnitCost" name="movementUnitCost" step="0.01" min="0" style="display: none;">
+                <label for="movementUnitPrice" id="movementUnitPriceLabel" style="display: none;">Valor de Venda por Unidade (R$):</label>
+                <input type="number" id="movementUnitPrice" name="movementUnitPrice" step="0.01" min="0" style="display: none;">
+                <label for="movementReason">Motivo:</label>
+                <input type="text" id="movementReason" name="movementReason" required>
+                <div class="popup-buttons">
+                    <button type="submit" class="popup-button confirm">Confirmar</button>
+                    <button type="button" class="popup-button cancel" id="stockMovementCancel">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
