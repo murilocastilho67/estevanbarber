@@ -50,14 +50,19 @@ function showSection(sectionId) {
     } else {
         console.error('Seção não encontrada:', sectionId);
     }
+    // Para subseções dentro de #stock-section, não precisamos de link de navegação específico
+    if (sectionId === 'stock-section') {
+        const subsections = section.querySelectorAll('.subsection');
+        subsections.forEach(subsection => subsection.classList.remove('active'));
+        const defaultSubsection = section.querySelector('#stock-products-section'); // Padrão pra produtos
+        if (defaultSubsection) defaultSubsection.classList.add('active');
+    }
     const navLink = document.getElementById(sectionId === 'appointmentForm' ? 'newAppointmentLink' : 
         sectionId === 'appointments-section' ? 'nav-appointments' :
         sectionId === 'barbers-section' ? 'nav-barbers' :
         sectionId === 'services-section' ? 'nav-services' :
         sectionId === 'schedules-section' ? 'nav-schedules' :
-        sectionId === 'stock-section' ? 'nav-stock' :
-        sectionId === 'cashflow-section' ? 'nav-cashflow' :
-        sectionId === 'dashboard-section' ? 'nav-dashboard' : '');
+        sectionId === 'stock-section' ? 'nav-stock-group' : ''); // Usa o grupo pra stock-section
     if (navLink) {
         navLink.classList.add('active');
     } else {

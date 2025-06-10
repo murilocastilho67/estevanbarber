@@ -18,8 +18,8 @@ body.centered {
 
 body.manager-layout {
     display: flex;
-    flex-direction: column; /* Muda pra column pra incluir o menu toggle */
-    position: relative; /* Pra posicionar o menu toggle */
+    flex-direction: column;
+    position: relative;
 }
 
 .top-header {
@@ -33,7 +33,7 @@ body.manager-layout {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 1002; /* Fica acima de tudo */
+    z-index: 1002;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -79,14 +79,14 @@ body.manager-layout {
     height: 100%;
     top: 0;
     left: 0;
-    transform: translateX(-100%); /* Esconde o menu fora da tela à esquerda */
+    transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
-    z-index: 1000; /* Fica acima do main-content */
+    z-index: 1000;
     overflow-y: auto;
 }
 
 .sidebar.open {
-    transform: translateX(0); /* Mostra o menu */
+    transform: translateX(0);
 }
 
 .sidebar-overlay {
@@ -96,8 +96,8 @@ body.manager-layout {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Fundo escurecido */
-    z-index: 999; /* Fica entre o main-content e a sidebar */
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
     transition: opacity 0.3s ease-in-out;
     opacity: 0;
 }
@@ -154,6 +154,7 @@ body.manager-layout {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    position: relative;
 }
 
 .sidebar a i {
@@ -169,15 +170,44 @@ body.manager-layout {
     font-weight: bold;
 }
 
+/* Estilo para agrupamentos no menu lateral (ajustado pra Bootstrap) */
+.nav-group {
+    font-weight: bold;
+    padding-left: 1rem;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-group .toggle-icon {
+    transition: transform 0.3s;
+}
+
+.nav-group.open .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Subitem-container não mais necessário com Bootstrap */
+.nav-subitem {
+    padding-left: 2rem;
+    display: flex;
+}
+
+.nav-subitem.active {
+    display: flex;
+}
+
 .main-content {
     padding: 2rem;
     flex-grow: 1;
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin: 0; /* Remove a margem esquerda fixa */
-    margin-top: 60px; /* Ajusta pra não sobrepor o header fixo */
-    transition: padding-left 0.3s ease-in-out; /* Animação suave pro padding */
+    margin: 0;
+    margin-top: 60px;
+    transition: padding-left 0.3s ease-in-out;
 }
 
 .container {
@@ -206,6 +236,14 @@ body.manager-layout {
 }
 
 .section.active {
+    display: block;
+}
+
+.subsection {
+    display: none;
+}
+
+.subsection.active {
     display: block;
 }
 
@@ -304,7 +342,6 @@ a:hover {
 #barbersList div, #schedulesList div, #stockList div, #stockMovementsList div {
     margin: 0;
     padding: 0.5rem 0;
-    /* Removido border-bottom pra tirar o risco */
 }
 
 #servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child, #stockList div:last-child, #stockMovementsList div:last-child {
@@ -418,7 +455,7 @@ th {
 
 #appointmentsTable {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Cards no desktop */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
     margin-top: 1rem;
 }
@@ -468,7 +505,7 @@ th {
     margin: 0;
     line-height: 1.5;
     text-align: left;
-    flex-grow: 1; /* Faz o label ocupar o espaço disponível */
+    flex-grow: 1;
 }
 
 .service-item input[type="checkbox"] {
@@ -674,7 +711,7 @@ form#scheduleForm button, form#stockForm button {
 /* Estilo para cards de agendamentos */
 #appointmentsList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Cards no desktop */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
 }
 
@@ -962,7 +999,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     .sidebar {
-        width: 200px; /* Reduz a largura no mobile */
+        width: 200px;
         padding: 0.5rem;
     }
 
@@ -989,7 +1026,7 @@ form#scheduleForm button, form#stockForm button {
         padding: 1rem;
         border-radius: 0;
         box-shadow: none;
-        margin-top: 50px; /* Ajusta pro header no mobile */
+        margin-top: 50px;
     }
 
     .appointment-form {
@@ -1066,7 +1103,7 @@ form#scheduleForm button, form#stockForm button {
 
     /* Ajustes para cards de agendamentos em services.html e manager.html */
     #appointmentsList, #appointmentsTable {
-        grid-template-columns: 1fr; /* Um card por linha no mobile */
+        grid-template-columns: 1fr;
     }
 
     .appointment-card {
@@ -1093,7 +1130,7 @@ form#scheduleForm button, form#stockForm button {
 
     /* Transforma os cards de serviços em layout vertical no mobile */
     #servicesList {
-        grid-template-columns: 1fr; /* Um card por linha no mobile */
+        grid-template-columns: 1fr;
     }
 
     .service-card {
@@ -1126,7 +1163,7 @@ form#scheduleForm button, form#stockForm button {
 
     /* Transforma os cards de horários em layout vertical no mobile */
     #schedulesList {
-        grid-template-columns: 1fr; /* Um card por linha no mobile */
+        grid-template-columns: 1fr;
     }
 
     .schedule-card {
@@ -1159,7 +1196,7 @@ form#scheduleForm button, form#stockForm button {
 
     /* Transforma os cards de estoque em layout vertical no mobile */
     #stockList {
-        grid-template-columns: 1fr; /* Um card por linha no mobile */
+        grid-template-columns: 1fr;
     }
 
     .stock-card {
@@ -1192,7 +1229,7 @@ form#scheduleForm button, form#stockForm button {
 
     /* Transforma os cards de movimentações em layout vertical no mobile */
     #stockMovementsList {
-        grid-template-columns: 1fr; /* Um card por linha no mobile */
+        grid-template-columns: 1fr;
     }
 
     .movement-card {
@@ -1230,13 +1267,13 @@ form#scheduleForm button, form#stockForm button {
 
     /* Responsividade para cards de barbeiros */
     #barbersList {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Dinâmico: 2 cards por linha se couber */
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 
     .barber-card {
         padding: 0.8rem;
-        flex-direction: column; /* Muda o layout dos cards pra vertical no mobile */
-        align-items: flex-start; /* Alinha o conteúdo à esquerda */
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     .barber-card .barber-info h4 {
@@ -1244,16 +1281,16 @@ form#scheduleForm button, form#stockForm button {
     }
 
     .barber-card .barber-actions {
-        flex-direction: column; /* Empilha os botões verticalmente */
+        flex-direction: column;
         gap: 0.5rem;
-        width: 100%; /* Faz os botões ocuparem toda a largura do card */
+        width: 100%;
         margin-top: 0.5rem;
     }
 
     .barber-card .action-btn {
-        width: 100%; /* Botões ocupam a largura total */
-        padding: 0.5rem; /* Aumenta o padding pra facilitar o clique */
-        font-size: 0.9rem; /* Tamanho de fonte maior pra legibilidade */
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
         text-align: center;
     }
 }
@@ -1281,7 +1318,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     .main-content {
-        margin-top: 45px; /* Ajusta pro header no mobile pequeno */
+        margin-top: 45px;
     }
 
     .time-slot {
@@ -1291,7 +1328,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     #appointmentsList, #appointmentsTable {
-        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+        grid-template-columns: 1fr;
     }
 
     .appointment-card p {
@@ -1304,7 +1341,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     #servicesList {
-        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+        grid-template-columns: 1fr;
     }
 
     .service-card .service-info p {
@@ -1317,7 +1354,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     #schedulesList {
-        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+        grid-template-columns: 1fr;
     }
 
     .schedule-card .schedule-info p {
@@ -1330,7 +1367,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     #stockList {
-        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+        grid-template-columns: 1fr;
     }
 
     .stock-card .stock-info p {
@@ -1343,7 +1380,7 @@ form#scheduleForm button, form#stockForm button {
     }
 
     #stockMovementsList {
-        grid-template-columns: 1fr; /* Garante um card por linha em telas muito pequenas */
+        grid-template-columns: 1fr;
     }
 
     .movement-card p {

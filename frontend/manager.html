@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Adiciona o Font Awesome via CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Adiciona o CSS do Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <style>
         /* Estilo do pop-up personalizado */
         .popup-overlay {
@@ -70,6 +72,7 @@
             background: #c9302c;
         }
     </style>
+    <script src="https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.pt_BR.Cg3X8WmgH3E.O/m=gapi_iframes/rt=j/sv=1/d=1/ed=1/rs=AHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw/cb=gapi.loaded_0?le=scs" async></script>
     <script type="module">
         import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -109,7 +112,21 @@
             <a href="#" id="nav-appointments" class="active"><i class="fas fa-calendar-check"></i> Agendamentos</a>
             <a href="#" id="nav-services"><i class="fas fa-cut"></i> Serviços</a>
             <a href="#" id="nav-schedules"><i class="fas fa-clock"></i> Horários</a>
-            <a href="#" id="nav-stock"><i class="fas fa-boxes"></i> Estoque</a>
+            <div class="accordion" id="stockAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="stockHeading">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#stockCollapse" aria-expanded="false" aria-controls="stockCollapse">
+                            <i class="fas fa-boxes"></i> Estoque
+                        </button>
+                    </h2>
+                    <div id="stockCollapse" class="accordion-collapse collapse" aria-labelledby="stockHeading" data-bs-parent="#stockAccordion">
+                        <div class="accordion-body">
+                            <a href="#" class="nav-subitem" id="nav-stock-movements"><i class="fas fa-exchange-alt"></i> Movimentações</a>
+                            <a href="#" class="nav-subitem" id="nav-stock-products"><i class="fas fa-box"></i> Produtos</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <a href="#" id="nav-cashflow"><i class="fas fa-cash-register"></i> Fluxo de Caixa</a>
             <a href="#" id="nav-dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="#" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -126,23 +143,62 @@
             <form id="barberForm">
                 <input type="hidden" id="barberId" name="barberId">
                 <label for="barberName">Nome do Barbeiro:</label>
-                <input type="text" id="barberName" name="barberName" required>
+                <input type="text" id="barberName" name="barberName" required="">
                 <button type="submit">Adicionar Barbeiro</button>
             </form>
-            <div id="barbersList"></div>
+            <div id="barbersList">
+                <div class="barber-card">
+                    <div class="barber-info">
+                        <h4>Estevan</h4>
+                    </div>
+                    <div class="barber-actions">
+                        <button class="action-btn edit-barber" data-id="barber1748861790183">Editar</button>
+                        <button class="action-btn delete-barber" data-id="barber1748861790183">Excluir</button>
+                    </div>
+                </div>
+                <div class="barber-card">
+                    <div class="barber-info">
+                        <h4>Inã</h4>
+                    </div>
+                    <div class="barber-actions">
+                        <button class="action-btn edit-barber" data-id="barber1748861797732">Editar</button>
+                        <button class="action-btn delete-barber" data-id="barber1748861797732">Excluir</button>
+                    </div>
+                </div>
+                <div class="barber-card">
+                    <div class="barber-info">
+                        <h4>Estevan</h4>
+                    </div>
+                    <div class="barber-actions">
+                        <button class="action-btn edit-barber" data-id="barber1748861790183">Editar</button>
+                        <button class="action-btn delete-barber" data-id="barber1748861790183">Excluir</button>
+                    </div>
+                </div>
+                <div class="barber-card">
+                    <div class="barber-info">
+                        <h4>Inã</h4>
+                    </div>
+                    <div class="barber-actions">
+                        <button class="action-btn edit-barber" data-id="barber1748861797732">Editar</button>
+                        <button class="action-btn delete-barber" data-id="barber1748861797732">Excluir</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="appointments-section" class="section">
+        <div id="appointments-section" class="section active">
             <h2>Agendamentos</h2>
             <div class="filter">
                 <label for="barberFilter">Barbeiro:</label>
                 <select id="barberFilter" name="barberFilter">
                     <option value="all">Todos</option>
+                    <option value="barber1748861790183">Estevan</option>
+                    <option value="barber1748861797732">Inã</option>
                 </select>
                 <label for="dateFilter">Data:</label>
                 <input type="date" id="dateFilter">
             </div>
-            <div id="appointmentsList"></div>
+            <div id="appointmentsList"><p>Nenhum agendamento corresponde aos filtros.</p></div>
             <div class="summary">
                 <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
                 <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
@@ -154,13 +210,16 @@
             <form id="serviceForm">
                 <input type="hidden" id="serviceId" name="serviceId">
                 <label for="serviceBarber">Barbeiro:</label>
-                <select id="serviceBarber" name="serviceBarber"></select>
+                <select id="serviceBarber" name="serviceBarber">
+                    <option value="barber1748861790183">Estevan</option>
+                    <option value="barber1748861797732">Inã</option>
+                </select>
                 <label for="serviceName">Nome do Serviço:</label>
-                <input type="text" id="serviceName" name="serviceName" required>
+                <input type="text" id="serviceName" name="serviceName" required="">
                 <label for="servicePrice">Preço (R$):</label>
-                <input type="number" id="servicePrice" name="servicePrice" step="0.01" required>
+                <input type="number" id="servicePrice" name="servicePrice" step="0.01" required="">
                 <label for="serviceDuration">Duração (min):</label>
-                <input type="number" id="serviceDuration" name="serviceDuration" required>
+                <input type="number" id="serviceDuration" name="serviceDuration" required="">
                 <button type="submit">Adicionar/Editar Serviço</button>
             </form>
             <div id="servicesList"></div>
@@ -172,9 +231,12 @@
             <form id="scheduleForm">
                 <input type="hidden" id="scheduleId" name="scheduleId">
                 <label for="scheduleBarber">Barbeiro:</label>
-                <select id="scheduleBarber" name="scheduleBarber" required></select>
+                <select id="scheduleBarber" name="scheduleBarber" required="">
+                    <option value="barber1748861790183">Estevan</option>
+                    <option value="barber1748861797732">Inã</option>
+                </select>
                 <label for="dayOfWeek">Dia da Semana:</label>
-                <select id="dayOfWeek" name="dayOfWeek" required>
+                <select id="dayOfWeek" name="dayOfWeek" required="">
                     <option value="Segunda">Segunda</option>
                     <option value="Terça">Terça</option>
                     <option value="Quarta">Quarta</option>
@@ -183,9 +245,9 @@
                     <option value="Sábado">Sábado</option>
                 </select>
                 <label for="startTime">Início:</label>
-                <input type="time" id="startTime" name="startTime" required>
+                <input type="time" id="startTime" name="startTime" required="">
                 <label for="endTime">Fim:</label>
-                <input type="time" id="endTime" name="endTime" required>
+                <input type="time" id="endTime" name="endTime" required="">
                 <label for="breakStart">Pausa - Início:</label>
                 <input type="time" id="breakStart" name="breakStart">
                 <label for="breakEnd">Pausa - Fim:</label>
@@ -196,44 +258,48 @@
         </div>
 
         <div id="stock-section" class="section">
-            <h2>Gerenciar Estoque</h2>
-            <form id="stockForm">
-                <input type="hidden" id="productId" name="productId">
-                <label for="productName">Nome do Produto:</label>
-                <input type="text" id="productName" name="productName" required>
-                <label for="costPrice">Valor Pago (Custo por Unidade - R$):</label>
-                <input type="number" id="costPrice" name="costPrice" step="0.01" min="0" required>
-                <label for="sellingPrice">Valor de Venda (por Unidade - R$):</label>
-                <input type="number" id="sellingPrice" name="sellingPrice" step="0.01" min="0" required>
-                <label for="supplier">Fornecedor:</label>
-                <input type="text" id="supplier" name="supplier">
-                <label for="category">Categoria:</label>
-                <select id="category" name="category">
-                    <option value="Higiene">Higiene</option>
-                    <option value="Estilização">Estilização</option>
-                    <option value="Barba">Barba</option>
-                    <option value="Outros">Outros</option>
-                </select>
-                <button type="submit">Adicionar Produto</button>
-            </form>
-            <div id="stockList"></div>
-            <div class="summary">
-                <p>Valor Total do Estoque (Custo): R$<span id="totalStockValue">0.00</span></p>
+            <div id="stock-movements-section" class="subsection">
+                <h2>Histórico de Movimentações</h2>
+                <div class="filter">
+                    <label for="movementProductFilter">Produto:</label>
+                    <select id="movementProductFilter" name="movementProductFilter">
+                        <option value="all">Todos</option>
+                    </select>
+                    <label for="movementTypeFilter">Tipo:</label>
+                    <select id="movementTypeFilter" name="movementTypeFilter">
+                        <option value="all">Todos</option>
+                        <option value="entry">Entradas</option>
+                        <option value="exit">Saídas</option>
+                    </select>
+                </div>
+                <div id="stockMovementsList"></div>
             </div>
-            <h3>Histórico de Movimentações</h3>
-            <div class="filter">
-                <label for="movementProductFilter">Produto:</label>
-                <select id="movementProductFilter" name="movementProductFilter">
-                    <option value="all">Todos</option>
-                </select>
-                <label for="movementTypeFilter">Tipo:</label>
-                <select id="movementTypeFilter" name="movementTypeFilter">
-                    <option value="all">Todos</option>
-                    <option value="entry">Entradas</option>
-                    <option value="exit">Saídas</option>
-                </select>
+            <div id="stock-products-section" class="subsection">
+                <h2>Gerenciar Produtos</h2>
+                <form id="stockForm">
+                    <input type="hidden" id="productId" name="productId">
+                    <label for="productName">Nome do Produto:</label>
+                    <input type="text" id="productName" name="productName" required="">
+                    <label for="costPrice">Valor Pago (Custo por Unidade - R$):</label>
+                    <input type="number" id="costPrice" name="costPrice" step="0.01" min="0" required="">
+                    <label for="sellingPrice">Valor de Venda (por Unidade - R$):</label>
+                    <input type="number" id="sellingPrice" name="sellingPrice" step="0.01" min="0" required="">
+                    <label for="supplier">Fornecedor:</label>
+                    <input type="text" id="supplier" name="supplier">
+                    <label for="category">Categoria:</label>
+                    <select id="category" name="category">
+                        <option value="Higiene">Higiene</option>
+                        <option value="Estilização">Estilização</option>
+                        <option value="Barba">Barba</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                    <button type="submit">Adicionar Produto</button>
+                </form>
+                <div id="stockList"></div>
+                <div class="summary">
+                    <p>Valor Total do Estoque (Custo): R$<span id="totalStockValue">0.00</span></p>
+                </div>
             </div>
-            <div id="stockMovementsList"></div>
         </div>
 
         <div id="cashflow-section" class="section">
@@ -267,13 +333,13 @@
                 <input type="hidden" id="movementProductId" name="movementProductId">
                 <input type="hidden" id="movementType" name="movementType">
                 <label for="movementQuantity">Quantidade:</label>
-                <input type="number" id="movementQuantity" name="movementQuantity" min="1" required>
+                <input type="number" id="movementQuantity" name="movementQuantity" min="1" required="">
                 <label for="movementUnitCost" id="movementUnitCostLabel" style="display: none;">Valor Pago por Unidade (R$):</label>
                 <input type="number" id="movementUnitCost" name="movementUnitCost" step="0.01" min="0" style="display: none;">
                 <label for="movementUnitPrice" id="movementUnitPriceLabel" style="display: none;">Valor de Venda por Unidade (R$):</label>
                 <input type="number" id="movementUnitPrice" name="movementUnitPrice" step="0.01" min="0" style="display: none;">
                 <label for="movementReason">Motivo:</label>
-                <input type="text" id="movementReason" name="movementReason" required>
+                <input type="text" id="movementReason" name="movementReason" required="">
                 <div class="popup-buttons">
                     <button type="submit" class="popup-button confirm">Confirmar</button>
                     <button type="button" class="popup-button cancel" id="stockMovementCancel">Cancelar</button>
@@ -282,6 +348,47 @@
         </div>
     </div>
 
+    <!-- Adiciona o JS do Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/manager/manager.js"></script>
+    <!-- Code injected by live-server -->
+    <script>
+        // <![CDATA[  <-- For SVG support
+        if ('WebSocket' in window) {
+            (function () {
+                function refreshCSS() {
+                    var sheets = [].slice.call(document.getElementsByTagName("link"));
+                    var head = document.getElementsByTagName("head")[0];
+                    for (var i = 0; i < sheets.length; ++i) {
+                        var elem = sheets[i];
+                        var parent = elem.parentElement || head;
+                        parent.removeChild(elem);
+                        var rel = elem.rel;
+                        if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+                            var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+                            elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+                        }
+                        parent.appendChild(elem);
+                    }
+                }
+                var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+                var address = protocol + window.location.host + window.location.pathname + '/ws';
+                var socket = new WebSocket(address);
+                socket.onmessage = function (msg) {
+                    if (msg.data == 'reload') window.location.reload();
+                    else if (msg.data == 'refreshcss') refreshCSS();
+                };
+                if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+                    console.log('Live reload enabled.');
+                    sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+                }
+            })();
+        }
+        else {
+            console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+        }
+        // ]]>
+    </script>
+    <iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" tabindex="-1" vspace="0" width="100%" aria-hidden="true" id="I0_1749520766699" name="I0_1749520766699" src="https://barbearia-estevan.firebaseapp.com/__/auth/iframe?apiKey=AIzaSyAoQo2EVxEypXMirJjfmgiujeR3ij0ZzNU&appName=%5BDEFAULT%5D&v=10.14.1&eid=p&usegapi=1&jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.pt_BR.Cg3X8WmgH3E.O%2Fd%3D1%2Frs%3DAHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw%2Fm%3D__features__#id=I0_1749520766699&_gfid=I0_1749520766699&parent=http%3A%2F%2F127.0.0.1%3A5500&pfname=&rpctoken=16509020" style="position: absolute; top: -100px; width: 1px; height: 1px;"></iframe><div id="dgwmh3ykva" style="display: block;"></div>
 </body>
 </html>

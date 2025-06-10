@@ -4,15 +4,16 @@ import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices } from './services.js';
 import { initSchedules } from './schedules.js';
-import { initStock, loadStock } from './stock.js';
+import { initStock, loadStockMovements, loadStockProducts } from './stock.js';
 import { initCashFlow } from './cashFlow.js';
 import { initDashboard } from './dashboard.js';
 
-console.log('manager.js carregado - Versão: 2025-06-05');
+console.log('manager.js carregado - Versão: 2025-06-09');
 
 const auth = getAuth();
 console.log('Auth inicializado:', !!auth);
 let db = window.db;
+let isLoadingBarbers = false; // Declarando a variável global
 
 // Função pra esperar o Firestore estar inicializado
 function waitForFirestore() {
@@ -47,6 +48,11 @@ async function handleLogout() {
     }
 }
 
+// Inicializa os subitens como escondidos ao carregar (não mais necessário com Bootstrap)
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM carregado - Verificando inicialização do menu');
+});
+
 auth.onAuthStateChanged((user) => {
     console.log('onAuthStateChanged disparado');
     if (!auth) {
@@ -64,15 +70,17 @@ auth.onAuthStateChanged((user) => {
     }
     console.log('Usuário autenticado:', user.email);
     isLoadingBarbers = true;
-    loadBarbers().catch(error => {
-        console.error('Erro no onAuthStateChanged:', error);
-        const servicesList = document.getElementById('servicesList');
-        if (servicesList) {
-            servicesList.innerHTML = '<p>Erro ao verificar autenticação: ' + error.message + '</p>';
-        }
-    }).finally(() => {
-        isLoadingBarbers = false;
-        console.log('loadBarbers finalizado');
+    waitForFirestore().then((db) => {
+        loadBarbers(db).catch(error => {
+            console.error('Erro no onAuthStateChanged:', error);
+            const servicesList = document.getElementById('servicesList');
+            if (servicesList) {
+                servicesList.innerHTML = '<p>Erro ao verificar autenticação: ' + error.message + '</p>';
+            }
+        }).finally(() => {
+            isLoadingBarbers = false;
+            console.log('loadBarbers finalizado');
+        });
     });
 });
 
@@ -151,14 +159,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 logoutBtn.style.display = 'block'; // Mostra o botão de logout
             });
 
-            // Fecha o menu ao clicar em um link da sidebar
-            sidebar.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', () => {
-                    sidebar.classList.remove('open');
-                    sidebarOverlay.classList.remove('active');
-                    menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-                    logoutBtn.style.display = 'block'; // Mostra o botão de logout
+            // Configura o clique nos grupos do menu (não mais necessário com Bootstrap)
+            const navGroups = document.querySelectorAll('.accordion-button');
+            navGroups.forEach(group => {
+                group.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Clicou no accordion:', group.textContent.trim());
                 });
+            });
+
+            // Fecha o menu ao clicar em um link da sidebar, exceto nos grupos
+            sidebar.querySelectorAll('a').forEach(link => {
+                if (!link.classList.contains('accordion-button')) {
+                    link.addEventListener('click', () => {
+                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('active');
+                        menuToggle.style.display = 'block'; // Mostra o botão de hamburger
+                        logoutBtn.style.display = 'block'; // Mostra o botão de logout
+                    });
+                }
             });
         } else {
             console.error('Elementos do menu não encontrados');

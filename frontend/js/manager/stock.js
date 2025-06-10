@@ -1,11 +1,79 @@
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection } from './utils.js';
 
-async function loadStock(db) {
+function toggleStockSubitems() {
+    const stockGroup = document.getElementById('nav-stock-group');
+    const subitems = document.querySelectorAll('.nav-subitem');
+    const isOpen = stockGroup.classList.contains('open');
+
+    subitems.forEach(subitem => {
+        subitem.style.display = isOpen ? 'none' : 'flex';
+    });
+    stockGroup.classList.toggle('open');
+}
+
+async function loadStockMovements(db) {
     try {
-        if (!db) throw new Error('Firestore não inicializado');
-        console.log('Carregando estoque...');
-        console.log('Usuário autenticado:', window.auth.currentUser?.email || 'Não autenticado');
+        console.log('Carregando histórico de movimentações...');
+        const stockMovementsList = document.getElementById('stockMovementsList');
+        stockMovementsList.innerHTML = '';
+
+        // Carrega os produtos pra mapear IDs pra nomes
+        const productsSnapshot = await getDocs(collection(db, 'stock'));
+        const productMap = {};
+        productsSnapshot.forEach((docSnapshot) => {
+            const product = docSnapshot.data();
+            productMap[product.id] = product.name;
+        });
+
+        // Carrega as movimentações, ordenadas por timestamp (mais recente primeiro)
+        let movementsQuery = query(collection(db, 'stock_movements'), orderBy('timestamp', 'desc'));
+        const movementsSnapshot = await getDocs(movementsQuery);
+        if (movementsSnapshot.empty) {
+            stockMovementsList.innerHTML = '<p>Nenhuma movimentação encontrada.</p>';
+            return;
+        }
+
+        movementsSnapshot.forEach((docSnapshot) => {
+            const movement = docSnapshot.data();
+            const productName = productMap[movement.productId] || movement.productId;
+            const date = new Date(movement.timestamp);
+            const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Converte unitCost e unitPrice pra número e fornece um fallback
+            const unitCost = typeof movement.unitCost === 'string' ? parseFloat(movement.unitCost) : movement.unitCost;
+            const unitPrice = movement.type === 'exit' && movement.unitPrice != null ? (typeof movement.unitPrice === 'string' ? parseFloat(movement.unitPrice) : movement.unitPrice) : null;
+            const profit = movement.type === 'exit' && movement.profit != null ? (typeof movement.profit === 'string' ? parseFloat(movement.profit) : movement.profit) : null;
+
+            const card = document.createElement('div');
+            card.className = 'movement-card';
+            card.innerHTML = `
+                <p><strong>Produto:</strong> ${productName}</p>
+                <p><strong>Tipo:</strong> ${movement.type === 'entry' ? 'Entrada' : 'Saída'}</p>
+                <p><strong>Data:</strong> ${formattedDate}</p>
+                <p><strong>Quantidade:</strong> ${movement.quantity}</p>
+                <p><strong>Custo por Unidade:</strong> R$${isNaN(unitCost) ? '0.00' : unitCost.toFixed(2)}</p>
+                ${movement.type === 'exit' ? `
+                    <p><strong>Valor de Venda:</strong> R$${isNaN(unitPrice) ? '0.00' : unitPrice.toFixed(2)}</p>
+                    <p><strong>Lucro:</strong> R$${isNaN(profit) ? '0.00' : profit.toFixed(2)}</p>
+                ` : ''}
+                <p><strong>Motivo:</strong> ${movement.reason}</p>
+            `;
+            stockMovementsList.appendChild(card);
+        });
+
+        if (stockMovementsList.innerHTML === '') {
+            stockMovementsList.innerHTML = '<p>Nenhuma movimentação encontrada.</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar histórico de movimentações:', error);
+        showPopup('Erro ao carregar histórico: ' + error.message);
+    }
+}
+
+async function loadStockProducts(db) {
+    try {
+        console.log('Carregando produtos...');
         const stockList = document.getElementById('stockList');
         const totalStockValue = document.getElementById('totalStockValue');
         const movementProductFilter = document.getElementById('movementProductFilter');
@@ -60,9 +128,6 @@ async function loadStock(db) {
             totalStockValue.textContent = totalValue.toFixed(2);
         }
 
-        // Carrega o histórico de movimentações
-        await loadStockMovements(db, movementProductFilter.value, document.getElementById('movementTypeFilter').value);
-
         // Adiciona eventos aos botões de entrada
         document.querySelectorAll('.stock-entry').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -113,7 +178,7 @@ async function loadStock(db) {
                     try {
                         await deleteDoc(doc(db, 'stock', btn.dataset.id));
                         console.log('Produto excluído:', btn.dataset.id);
-                        loadStock(db);
+                        loadStockProducts(db);
                         showPopup('Produto excluído com sucesso!');
                     } catch (error) {
                         console.error('Erro ao excluir produto:', error);
@@ -122,83 +187,9 @@ async function loadStock(db) {
                 }
             });
         });
-
-        // Adiciona eventos aos filtros de movimentações
-        const movementTypeFilter = document.getElementById('movementTypeFilter');
-        movementProductFilter.addEventListener('change', () => {
-            loadStockMovements(db, movementProductFilter.value, movementTypeFilter.value);
-        });
-        movementTypeFilter.addEventListener('change', () => {
-            loadStockMovements(db, movementProductFilter.value, movementTypeFilter.value);
-        });
     } catch (error) {
-        console.error('Erro ao carregar estoque:', error);
-        showPopup('Erro ao carregar estoque: ' + error.message);
-    }
-}
-
-async function loadStockMovements(db, productFilter = 'all', typeFilter = 'all') {
-    try {
-        console.log('Carregando histórico de movimentações...');
-        const stockMovementsList = document.getElementById('stockMovementsList');
-        stockMovementsList.innerHTML = '';
-
-        // Carrega os produtos pra mapear IDs pra nomes
-        const productsSnapshot = await getDocs(collection(db, 'stock'));
-        const productMap = {};
-        productsSnapshot.forEach((docSnapshot) => {
-            const product = docSnapshot.data();
-            productMap[product.id] = product.name;
-        });
-
-        // Carrega as movimentações, ordenadas por timestamp (mais recente primeiro)
-        let movementsQuery = query(collection(db, 'stock_movements'), orderBy('timestamp', 'desc'));
-        if (productFilter !== 'all') {
-            movementsQuery = query(movementsQuery, where('productId', '==', productFilter));
-        }
-        const movementsSnapshot = await getDocs(movementsQuery);
-        if (movementsSnapshot.empty) {
-            stockMovementsList.innerHTML = '<p>Nenhuma movimentação encontrada.</p>';
-            return;
-        }
-
-        movementsSnapshot.forEach((docSnapshot) => {
-            const movement = docSnapshot.data();
-            const matchesType = typeFilter === 'all' || movement.type === typeFilter;
-            if (matchesType) {
-                const productName = productMap[movement.productId] || movement.productId;
-                const date = new Date(movement.timestamp);
-                const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                
-                // Converte unitCost e unitPrice pra número e fornece um fallback
-                const unitCost = typeof movement.unitCost === 'string' ? parseFloat(movement.unitCost) : movement.unitCost;
-                const unitPrice = movement.type === 'exit' && movement.unitPrice != null ? (typeof movement.unitPrice === 'string' ? parseFloat(movement.unitPrice) : movement.unitPrice) : null;
-                const profit = movement.type === 'exit' && movement.profit != null ? (typeof movement.profit === 'string' ? parseFloat(movement.profit) : movement.profit) : null;
-
-                const card = document.createElement('div');
-                card.className = 'movement-card';
-                card.innerHTML = `
-                    <p><strong>Produto:</strong> ${productName}</p>
-                    <p><strong>Tipo:</strong> ${movement.type === 'entry' ? 'Entrada' : 'Saída'}</p>
-                    <p><strong>Data:</strong> ${formattedDate}</p>
-                    <p><strong>Quantidade:</strong> ${movement.quantity}</p>
-                    <p><strong>Custo por Unidade:</strong> R$${isNaN(unitCost) ? '0.00' : unitCost.toFixed(2)}</p>
-                    ${movement.type === 'exit' ? `
-                        <p><strong>Valor de Venda:</strong> R$${isNaN(unitPrice) ? '0.00' : unitPrice.toFixed(2)}</p>
-                        <p><strong>Lucro:</strong> R$${isNaN(profit) ? '0.00' : profit.toFixed(2)}</p>
-                    ` : ''}
-                    <p><strong>Motivo:</strong> ${movement.reason}</p>
-                `;
-                stockMovementsList.appendChild(card);
-            }
-        });
-
-        if (stockMovementsList.innerHTML === '') {
-            stockMovementsList.innerHTML = '<p>Nenhuma movimentação corresponde aos filtros.</p>';
-        }
-    } catch (error) {
-        console.error('Erro ao carregar histórico de movimentações:', error);
-        showPopup('Erro ao carregar histórico: ' + error.message);
+        console.error('Erro ao carregar produtos:', error);
+        showPopup('Erro ao carregar produtos: ' + error.message);
     }
 }
 
@@ -311,7 +302,7 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
             });
 
             closePopup();
-            loadStock(db);
+            loadStockProducts(db); // Recarrega só a seção de produtos
             showPopup(`${type === 'entry' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
         } catch (error) {
             console.error(`Erro ao registrar ${type === 'entry' ? 'entrada' : 'saída'}:`, error);
@@ -322,16 +313,43 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
 
 function initStock(db) {
     console.log('Inicializando eventos de estoque...');
-    const navStock = document.getElementById('nav-stock');
-    if (navStock) {
-        navStock.addEventListener('click', (e) => {
+    const navStockGroup = document.getElementById('nav-stock-group');
+    const navStockMovements = document.getElementById('nav-stock-movements');
+    const navStockProducts = document.getElementById('nav-stock-products');
+
+    if (navStockGroup) {
+        navStockGroup.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Clicou em Estoque');
-            showSection('stock-section');
-            loadStock(db);
+            toggleStockSubitems();
         });
     } else {
-        console.error('Elemento nav-stock não encontrado');
+        console.error('Elemento nav-stock-group não encontrado');
+    }
+
+    if (navStockMovements) {
+        navStockMovements.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clicou em Movimentações');
+            showSection('stock-section');
+            document.getElementById('stock-movements-section').classList.add('active');
+            document.getElementById('stock-products-section').classList.remove('active');
+            loadStockMovements(db);
+        });
+    } else {
+        console.error('Elemento nav-stock-movements não encontrado');
+    }
+
+    if (navStockProducts) {
+        navStockProducts.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clicou em Produtos');
+            showSection('stock-section');
+            document.getElementById('stock-products-section').classList.add('active');
+            document.getElementById('stock-movements-section').classList.remove('active');
+            loadStockProducts(db);
+        });
+    } else {
+        console.error('Elemento nav-stock-products não encontrado');
     }
 
     const stockForm = document.getElementById('stockForm');
@@ -374,7 +392,7 @@ function initStock(db) {
 
                 await setDoc(doc(db, 'stock', id), productData);
                 console.log('Produto salvo:', id);
-                loadStock(db);
+                loadStockProducts(db);
                 document.getElementById('stockForm').reset();
                 document.getElementById('productId').value = '';
                 document.getElementById('stockForm').querySelector('button[type="submit"]').textContent = 'Adicionar Produto';
@@ -389,4 +407,4 @@ function initStock(db) {
     }
 }
 
-export { initStock, loadStock };
+export { initStock, loadStockMovements, loadStockProducts };
