@@ -1,5 +1,21 @@
-import { collection, getDocs, doc, setDoc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection } from './utils.js';
+
+async function createServiceRevenue(db, appointment) {
+    const { totalPrice, id: appointmentId, services } = appointment;
+    const cashFlowData = {
+        id: `cf_${Date.now()}`,
+        type: 'revenue',
+        amount: totalPrice,
+        description: `Serviço de ${services.map(s => s.name).join(', ')}`,
+        source: 'service_sale',
+        relatedEntityId: appointmentId,
+        timestamp: new Date().toISOString(),
+        category: 'services'
+    };
+    await addDoc(collection(db, 'cash_flow_transactions'), cashFlowData);
+    console.log('Receita de serviço criada:', cashFlowData);
+}
 
 async function loadAppointments(db, barberId = 'all', date = '') {
     try {
@@ -21,7 +37,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             return;
         }
 
-        // Carrega todos os barbeiros pra mapear IDs pra nomes
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         const barberMap = {};
         barbersSnapshot.forEach((docSnapshot) => {
@@ -37,16 +52,14 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             appointments.push(appt);
         }
 
-        // Ordena os agendamentos por data e horário
         appointments.sort((a, b) => {
             const dateA = new Date(`${a.date}T${a.time}:00-03:00`);
             const dateB = new Date(`${b.date}T${b.time}:00-03:00`);
             return dateA - dateB;
         });
 
-        // Obtém a data de hoje no formato YYYY-MM-DD
         const today = new Date();
-        const todayString = today.toISOString().split('T')[0]; // Ex.: "2025-06-05"
+        const todayString = today.toISOString().split('T')[0];
         console.log('Data de hoje:', todayString);
 
         let totalAppointments = 0;
@@ -59,7 +72,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
 
             const matchesBarber = barberId === 'all' || appt.barberId === barberId;
             const matchesDate = !date || appt.date === date;
-            // Filtra agendamentos a partir da data de hoje
             const isFutureOrToday = appt.date >= todayString;
             console.log('Matches - Barbeiro:', matchesBarber, 'Data:', matchesDate, 'Futuro ou Hoje:', isFutureOrToday);
 
@@ -106,7 +118,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                 const dateParts = appt.date.split('-');
                 const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
-                // Busca feedback
                 let feedbackText = 'Nenhum feedback';
                 try {
                     console.log('Buscando feedback para agendamento:', appt.id);
@@ -131,7 +142,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                         <button class="action-btn completed" onclick="window.markCompleted('${appt.id}')">Marcar Realizado</button>
                         <button class="action-btn no-show" onclick="window.markNoShow('${appt.id}')">Marcar Não Compareceu</button>
                     `;
-                    // Adiciona o botão "Enviar Lembrete" se o telefone do cliente estiver disponível
                     if (userPhone) {
                         const reminderSent = appt.reminderSent || false;
                         actions += `
@@ -143,7 +153,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                 }
                 console.log('Ações definidas:', actions);
 
-                console.log('Criando card de agendamento...');
                 const card = document.createElement('div');
                 card.className = 'appointment-card';
                 card.innerHTML = `
@@ -163,11 +172,10 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                 console.log('Card adicionado:', appt.id);
 
                 totalAppointments++;
-                totalRevenue += appt.totalPrice;
+                if (appt.status === 'completed') totalRevenue += appt.totalPrice;
             }
         }
 
-        console.log('Configurando eventos dos botões de lembrete...');
         document.querySelectorAll('.send-reminder').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const apptId = btn.dataset.id;
@@ -178,20 +186,16 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                 const date = btn.dataset.date;
 
                 try {
-                    // Gera o link do WhatsApp
                     const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
                     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
                     console.log('Link do WhatsApp gerado:', whatsappLink);
 
-                    // Marca o lembrete como enviado no Firestore
                     await setDoc(doc(db, 'appointments', apptId), { reminderSent: true }, { merge: true });
                     console.log('Lembrete marcado como enviado para o agendamento:', apptId);
 
-                    // Atualiza o botão
                     btn.textContent = 'Lembrete Enviado';
                     btn.disabled = true;
 
-                    // Abre o link do WhatsApp
                     window.open(whatsappLink, '_blank');
                 } catch (error) {
                     console.error('Erro ao enviar lembrete:', error);
@@ -200,13 +204,11 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             });
         });
 
-        console.log('Atualizando totais...');
         document.getElementById('totalAppointments').textContent = totalAppointments;
         document.getElementById('totalRevenue').textContent = totalRevenue.toFixed(2);
         console.log('Totais atualizados:', totalAppointments, totalRevenue);
 
         if (totalAppointments === 0) {
-            console.log('Nenhum agendamento corresponde aos filtros');
             appointmentsList.innerHTML = '<p>Nenhum agendamento corresponde aos filtros.</p>';
         }
     } catch (error) {
@@ -275,7 +277,18 @@ async function markCompleted(db, id) {
     const confirmed = await showPopup('Marcar agendamento como concluído?', true);
     if (confirmed) {
         try {
-            await setDoc(doc(db, 'appointments', id), { status: 'completed' }, { merge: true });
+            await runTransaction(db, async (transaction) => {
+                const apptRef = doc(db, 'appointments', id);
+                const apptSnap = await transaction.get(apptRef);
+                if (!apptSnap.exists()) throw new Error('Agendamento não encontrado');
+
+                const appt = apptSnap.data();
+                transaction.set(apptRef, { status: 'completed' }, { merge: true });
+
+                if (appt.status !== 'completed') {
+                    await createServiceRevenue(db, { ...appt, id });
+                }
+            });
             console.log('Agendamento marcado como concluído:', id);
             const barberId = document.getElementById('barberFilter').value;
             const date = document.getElementById('dateFilter').value;

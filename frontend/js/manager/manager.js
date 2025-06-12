@@ -5,7 +5,7 @@ import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices } from './services.js';
 import { initSchedules } from './schedules.js';
 import { initStock, loadStockMovements, loadStockProducts } from './stock.js';
-import { initCashFlow } from './cashFlow.js';
+import { initCashFlow, loadCashFlow } from './cashflow.js';
 import { initDashboard } from './dashboard.js';
 
 console.log('manager.js carregado - Versão: 2025-06-09');
@@ -48,7 +48,6 @@ async function handleLogout() {
     }
 }
 
-// Inicializa os subitens como escondidos ao carregar (não mais necessário com Bootstrap)
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM carregado - Verificando inicialização do menu');
 });
@@ -88,10 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM carregado, inicializando painel do gerente...');
 
     try {
-        // Espera o Firestore estar inicializado
         db = await waitForFirestore();
 
-        // Inicializa todas as funcionalidades
         initBarbers(db);
         initAppointments(db);
         initServices(db);
@@ -100,14 +97,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         initCashFlow(db);
         initDashboard(db);
 
-        // Carrega os barbeiros e agendamentos por padrão
         loadBarbers(db);
         loadAppointments(db);
 
-        // Exibe a seção "Agendamentos" automaticamente ao carregar a página
         showSection('appointments-section');
 
-        // Configura os eventos de logout
         const navLogout = document.getElementById('nav-logout');
         const logoutBtn = document.getElementById('logoutBtn');
 
@@ -129,7 +123,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Elemento logoutBtn não encontrado');
         }
 
-        // Configura o menu toggle
         const menuToggle = document.getElementById('menuToggle');
         const menuClose = document.getElementById('menuClose');
         const sidebar = document.getElementById('sidebar');
@@ -140,26 +133,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             menuToggle.addEventListener('click', () => {
                 sidebar.classList.add('open');
                 sidebarOverlay.classList.add('active');
-                menuToggle.style.display = 'none'; // Esconde o botão de hamburger
-                logoutBtn.style.display = 'none'; // Esconde o botão de logout
+                menuToggle.style.display = 'none';
+                logoutBtn.style.display = 'none';
             });
 
             menuClose.addEventListener('click', () => {
                 sidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
-                menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-                logoutBtn.style.display = 'block'; // Mostra o botão de logout
+                menuToggle.style.display = 'block';
+                logoutBtn.style.display = 'block';
             });
 
-            // Fecha o menu ao clicar no overlay
             sidebarOverlay.addEventListener('click', () => {
                 sidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
-                menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-                logoutBtn.style.display = 'block'; // Mostra o botão de logout
+                menuToggle.style.display = 'block';
+                logoutBtn.style.display = 'block';
             });
 
-            // Configura o clique nos grupos do menu (não mais necessário com Bootstrap)
             const navGroups = document.querySelectorAll('.accordion-button');
             navGroups.forEach(group => {
                 group.addEventListener('click', (e) => {
@@ -168,14 +159,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
 
-            // Fecha o menu ao clicar em um link da sidebar, exceto nos grupos
             sidebar.querySelectorAll('a').forEach(link => {
                 if (!link.classList.contains('accordion-button')) {
                     link.addEventListener('click', () => {
                         sidebar.classList.remove('open');
                         sidebarOverlay.classList.remove('active');
-                        menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-                        logoutBtn.style.display = 'block'; // Mostra o botão de logout
+                        menuToggle.style.display = 'block';
+                        logoutBtn.style.display = 'block';
                     });
                 }
             });

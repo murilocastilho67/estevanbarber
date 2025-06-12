@@ -304,7 +304,26 @@
 
         <div id="cashflow-section" class="section">
             <h2>Fluxo de Caixa</h2>
-            <p>Seção de fluxo de caixa em desenvolvimento.</p>
+            <div id="cashflowList"></div>
+            <div class="summary">
+                <p>Total de Receitas: R$<span id="totalRevenue">0.00</span></p>
+                <p>Total de Despesas: R$<span id="totalExpense">0.00</span></p>
+                <p>Saldo Líquido: R$<span id="netBalance">0.00</span></p>
+            </div>
+            <form id="expenseForm">
+                <label for="expenseAmount">Valor da Despesa:</label>
+                <input type="number" id="expenseAmount" step="0.01" required="">
+                <label for="expenseDescription">Descrição:</label>
+                <input type="text" id="expenseDescription" required="">
+                <label for="expenseCategory">Categoria:</label>
+                <select id="expenseCategory">
+                    <option value="operational_expense">Geral</option>
+                    <option value="rent">Aluguel</option>
+                    <option value="salary">Salário</option>
+                    <option value="utility_bill">Contas</option>
+                </select>
+                <button type="submit">Adicionar Despesa</button>
+            </form>
         </div>
 
         <div id="dashboard-section" class="section">

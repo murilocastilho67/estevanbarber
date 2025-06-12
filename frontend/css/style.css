@@ -72,7 +72,7 @@ body.manager-layout {
 
 .sidebar {
     width: 250px;
-    background-color: #4b2e1e;
+    background-color: #4b2e1e; /* Fundo marrom pra todo o menu */
     color: #fff;
     padding: 1rem;
     position: fixed;
@@ -162,34 +162,64 @@ body.manager-layout {
 }
 
 .sidebar a:hover {
-    background-color: #6b4e31;
+    background-color: #6b4e31; /* Hover em tom mais claro de marrom */
 }
 
 .sidebar a.active {
-    background-color: #6b4e31;
+    background-color: #6b4e31; /* Ativo em tom mais claro de marrom */
     font-weight: bold;
 }
 
-/* Estilo para agrupamentos no menu lateral (ajustado pra Bootstrap) */
-.nav-group {
+/* Estilizando o accordion do Bootstrap */
+#stockAccordion .accordion-item {
+    background-color: #4b2e1e; /* Fundo marrom pra todo o item */
+    border: none; /* Remove a borda padrão branca */
+}
+
+#stockAccordion .accordion-button {
+    background-color: #4b2e1e; /* Fundo marrom pro botão */
+    color: #fff; /* Fonte branca */
     font-weight: bold;
-    padding-left: 1rem;
-    cursor: pointer;
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 1rem;
+    border: none; /* Remove a borda padrão */
 }
 
-.nav-group .toggle-icon {
-    transition: transform 0.3s;
+#stockAccordion .accordion-button:not(.collapsed) {
+    background-color: #6b4e31; /* Fundo marrom mais claro quando expandido */
+    color: #fff; /* Mantém a fonte branca */
+    box-shadow: none; /* Remove a sombra padrão */
 }
 
-.nav-group.open .toggle-icon {
-    transform: rotate(180deg);
+#stockAccordion .accordion-button:focus {
+    box-shadow: none; /* Remove a borda azul ao focar */
+    outline: none; /* Remove o contorno */
 }
 
-/* Subitem-container não mais necessário com Bootstrap */
+#stockAccordion .accordion-collapse {
+    background-color: #4b2e1e; /* Fundo marrom pro submenu */
+}
+
+#stockAccordion .accordion-body {
+    padding: 0; /* Remove padding padrão pra alinhar */
+}
+
+#stockAccordion .accordion-body .nav-subitem {
+    color: #fff; /* Fonte branca pro submenu */
+    padding: 0.5rem 1rem 0.5rem 2.5rem; /* Ajusta o padding pra indentação */
+}
+
+#stockAccordion .accordion-body .nav-subitem:hover {
+    background-color: #6b4e31; /* Hover em tom mais claro */
+}
+
+#stockAccordion .accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+#stockAccordion .accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
 .nav-subitem {
     padding-left: 2rem;
     display: flex;

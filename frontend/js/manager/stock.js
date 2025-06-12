@@ -1,15 +1,20 @@
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, query, where, orderBy, runTransaction, addDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection } from './utils.js';
 
-function toggleStockSubitems() {
-    const stockGroup = document.getElementById('nav-stock-group');
-    const subitems = document.querySelectorAll('.nav-subitem');
-    const isOpen = stockGroup.classList.contains('open');
-
-    subitems.forEach(subitem => {
-        subitem.style.display = isOpen ? 'none' : 'flex';
-    });
-    stockGroup.classList.toggle('open');
+async function createCashFlowTransaction(db, movement) {
+    const { type, productId, quantity, unitCost, unitPrice, timestamp, reason, productName } = movement;
+    const cashFlowData = {
+        id: `cf_${Date.now()}`,
+        type: type === 'entry' ? 'expense' : 'revenue',
+        amount: type === 'entry' ? quantity * unitCost : quantity * unitPrice,
+        description: `${type === 'entry' ? 'Compra' : 'Venda'} de ${productName || 'produto'}`,
+        source: type === 'entry' ? 'product_purchase' : 'stock_sale',
+        relatedEntityId: movement.id,
+        timestamp: timestamp || new Date().toISOString(),
+        category: type === 'entry' ? 'inventory' : 'sales'
+    };
+    const cashFlowRef = await addDoc(collection(db, 'cash_flow_transactions'), cashFlowData);
+    return cashFlowRef.id;
 }
 
 async function loadStockMovements(db) {
@@ -18,7 +23,6 @@ async function loadStockMovements(db) {
         const stockMovementsList = document.getElementById('stockMovementsList');
         stockMovementsList.innerHTML = '';
 
-        // Carrega os produtos pra mapear IDs pra nomes
         const productsSnapshot = await getDocs(collection(db, 'stock'));
         const productMap = {};
         productsSnapshot.forEach((docSnapshot) => {
@@ -26,7 +30,6 @@ async function loadStockMovements(db) {
             productMap[product.id] = product.name;
         });
 
-        // Carrega as movimentações, ordenadas por timestamp (mais recente primeiro)
         let movementsQuery = query(collection(db, 'stock_movements'), orderBy('timestamp', 'desc'));
         const movementsSnapshot = await getDocs(movementsQuery);
         if (movementsSnapshot.empty) {
@@ -40,7 +43,6 @@ async function loadStockMovements(db) {
             const date = new Date(movement.timestamp);
             const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
             
-            // Converte unitCost e unitPrice pra número e fornece um fallback
             const unitCost = typeof movement.unitCost === 'string' ? parseFloat(movement.unitCost) : movement.unitCost;
             const unitPrice = movement.type === 'exit' && movement.unitPrice != null ? (typeof movement.unitPrice === 'string' ? parseFloat(movement.unitPrice) : movement.unitPrice) : null;
             const profit = movement.type === 'exit' && movement.profit != null ? (typeof movement.profit === 'string' ? parseFloat(movement.profit) : movement.profit) : null;
@@ -61,10 +63,6 @@ async function loadStockMovements(db) {
             `;
             stockMovementsList.appendChild(card);
         });
-
-        if (stockMovementsList.innerHTML === '') {
-            stockMovementsList.innerHTML = '<p>Nenhuma movimentação encontrada.</p>';
-        }
     } catch (error) {
         console.error('Erro ao carregar histórico de movimentações:', error);
         showPopup('Erro ao carregar histórico: ' + error.message);
@@ -80,14 +78,12 @@ async function loadStockProducts(db) {
         stockList.innerHTML = '';
         let totalValue = 0;
 
-        // Carrega os produtos pra exibir na lista e no filtro
         const stockSnapshot = await getDocs(collection(db, 'stock'));
         if (stockSnapshot.empty) {
             stockList.innerHTML = '<p>Nenhum produto em estoque.</p>';
             totalStockValue.textContent = '0.00';
-            movementProductFilter.innerHTML = '<option value="all">Todos</option>'; // Limpa o filtro
+            movementProductFilter.innerHTML = '<option value="all">Todos</option>';
         } else {
-            // Popula o filtro de produtos
             movementProductFilter.innerHTML = '<option value="all">Todos</option>';
             stockSnapshot.forEach((docSnapshot) => {
                 const product = docSnapshot.data();
@@ -97,7 +93,6 @@ async function loadStockProducts(db) {
                 movementProductFilter.appendChild(option);
             });
 
-            // Exibe os produtos como cards
             stockSnapshot.forEach((docSnapshot) => {
                 const product = docSnapshot.data();
                 const value = product.quantity * product.averageCost;
@@ -128,7 +123,6 @@ async function loadStockProducts(db) {
             totalStockValue.textContent = totalValue.toFixed(2);
         }
 
-        // Adiciona eventos aos botões de entrada
         document.querySelectorAll('.stock-entry').forEach(btn => {
             btn.addEventListener('click', () => {
                 const productId = btn.dataset.id;
@@ -137,7 +131,6 @@ async function loadStockProducts(db) {
             });
         });
 
-        // Adiciona eventos aos botões de saída
         document.querySelectorAll('.stock-exit').forEach(btn => {
             btn.addEventListener('click', () => {
                 const productId = btn.dataset.id;
@@ -147,7 +140,6 @@ async function loadStockProducts(db) {
             });
         });
 
-        // Adiciona eventos aos botões de editar
         document.querySelectorAll('.edit-stock').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const productId = btn.dataset.id;
@@ -170,7 +162,6 @@ async function loadStockProducts(db) {
             });
         });
 
-        // Adiciona eventos aos botões de excluir
         document.querySelectorAll('.delete-stock').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const confirmed = await showPopup('Excluir produto do estoque?', true);
@@ -193,7 +184,7 @@ async function loadStockProducts(db) {
     }
 }
 
-function showStockMovementPopup(title, type, productId, averageCost, sellingPrice = null) {
+async function showStockMovementPopup(title, type, productId, averageCost, sellingPrice = null) {
     const popup = document.getElementById('stockMovementPopup');
     const form = document.getElementById('stockMovementForm');
     const titleElement = document.getElementById('stockMovementTitle');
@@ -205,12 +196,10 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
     const unitPriceInput = document.getElementById('movementUnitPrice');
     const cancelBtn = document.getElementById('stockMovementCancel');
 
-    // Configura o pop-up
     titleElement.textContent = title;
     productIdInput.value = productId;
     typeInput.value = type;
 
-    // Mostra/esconde campos com base no tipo de movimentação
     if (type === 'entry') {
         unitCostLabel.style.display = 'block';
         unitCostInput.style.display = 'block';
@@ -221,23 +210,20 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
     } else {
         unitCostLabel.style.display = 'none';
         unitCostInput.style.display = 'none';
-        unitCostInput.value = averageCost.toFixed(2); // Usa o custo médio atual
+        unitCostInput.value = averageCost.toFixed(2);
         unitPriceLabel.style.display = 'block';
         unitPriceInput.style.display = 'block';
         unitPriceInput.value = sellingPrice.toFixed(2);
     }
 
-    // Exibe o pop-up
     popup.style.display = 'flex';
 
-    // Configura o botão de cancelar
     const closePopup = () => {
         popup.style.display = 'none';
         form.reset();
     };
     cancelBtn.addEventListener('click', closePopup);
 
-    // Configura o submit do formulário
     form.onsubmit = async (e) => {
         e.preventDefault();
         const quantity = parseInt(document.getElementById('movementQuantity').value);
@@ -245,15 +231,8 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
         let unitPrice = type === 'exit' ? parseFloat(document.getElementById('movementUnitPrice').value) : null;
         const reason = document.getElementById('movementReason').value;
 
-        // Garante que unitCost e unitPrice sejam números válidos
-        if (isNaN(unitCost)) {
-            unitCost = 0;
-            console.warn('unitCost inválido, usando 0 como fallback');
-        }
-        if (type === 'exit' && isNaN(unitPrice)) {
-            unitPrice = 0;
-            console.warn('unitPrice inválido, usando 0 como fallback');
-        }
+        if (isNaN(unitCost)) unitCost = 0;
+        if (type === 'exit' && isNaN(unitPrice)) unitPrice = 0;
 
         try {
             const productDoc = await getDoc(doc(db, 'stock', productId));
@@ -263,46 +242,63 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
             let newQuantity = product.quantity;
             let newAverageCost = product.averageCost;
 
-            if (type === 'entry') {
-                // Calcula o novo custo médio
-                const currentTotalCost = product.quantity * product.averageCost;
-                const newTotalCost = (quantity * unitCost) + currentTotalCost;
-                newQuantity = product.quantity + quantity;
-                newAverageCost = newQuantity > 0 ? newTotalCost / newQuantity : 0;
-            } else {
-                // Verifica se há estoque suficiente
-                if (quantity > product.quantity) {
-                    throw new Error('Quantidade insuficiente em estoque');
+            await runTransaction(db, async (transaction) => {
+                const productRef = doc(db, 'stock', productId);
+                const productSnap = await transaction.get(productRef);
+                if (!productSnap.exists()) throw new Error('Produto não encontrado na transação');
+
+                const currentProduct = productSnap.data();
+                if (type === 'entry') {
+                    const currentTotalCost = currentProduct.quantity * currentProduct.averageCost;
+                    const newTotalCost = (quantity * unitCost) + currentTotalCost;
+                    newQuantity = currentProduct.quantity + quantity;
+                    newAverageCost = newQuantity > 0 ? newTotalCost / newQuantity : 0;
+                } else {
+                    if (quantity > currentProduct.quantity) throw new Error('Quantidade insuficiente em estoque');
+                    newQuantity = currentProduct.quantity - quantity;
+                    newAverageCost = currentProduct.averageCost;
                 }
-                newQuantity = product.quantity - quantity;
-                newAverageCost = product.averageCost; // Custo médio não muda na saída
-            }
 
-            // Atualiza o produto
-            await setDoc(doc(db, 'stock', productId), {
-                ...product,
-                quantity: newQuantity,
-                averageCost: newAverageCost
-            });
+                transaction.set(productRef, {
+                    ...currentProduct,
+                    quantity: newQuantity,
+                    averageCost: newAverageCost
+                });
 
-            // Registra a movimentação
-            const movementId = `movement${Date.now()}`;
-            const timestamp = new Date().toISOString();
-            const profit = type === 'exit' ? (unitPrice - unitCost) * quantity : null;
-            await setDoc(doc(db, 'stock_movements', movementId), {
-                id: movementId,
-                type,
-                productId,
-                quantity,
-                unitCost,
-                unitPrice,
-                profit,
-                timestamp,
-                reason
+                const movementId = `movement${Date.now()}`;
+                const timestamp = new Date().toISOString();
+                const profit = type === 'exit' ? (unitPrice - unitCost) * quantity : null;
+                const movementData = {
+                    id: movementId,
+                    type,
+                    productId,
+                    quantity,
+                    unitCost,
+                    unitPrice,
+                    profit,
+                    timestamp,
+                    reason,
+                    cashFlowTransactionId: null
+                };
+                const movementRef = await transaction.set(doc(db, 'stock_movements', movementId), movementData);
+
+                // Cria transação de fluxo de caixa
+                const cashFlowData = {
+                    id: `cf_${Date.now()}`,
+                    type: type === 'entry' ? 'expense' : 'revenue',
+                    amount: type === 'entry' ? quantity * unitCost : quantity * unitPrice,
+                    description: `${type === 'entry' ? 'Compra' : 'Venda'} de ${currentProduct.name || 'produto'}`,
+                    source: type === 'entry' ? 'product_purchase' : 'stock_sale',
+                    relatedEntityId: movementId,
+                    timestamp,
+                    category: type === 'entry' ? 'inventory' : 'sales'
+                };
+                const cashFlowRef = await addDoc(collection(db, 'cash_flow_transactions'), cashFlowData);
+                transaction.update(doc(db, 'stock_movements', movementId), { cashFlowTransactionId: cashFlowRef.id });
             });
 
             closePopup();
-            loadStockProducts(db); // Recarrega só a seção de produtos
+            loadStockProducts(db);
             showPopup(`${type === 'entry' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
         } catch (error) {
             console.error(`Erro ao registrar ${type === 'entry' ? 'entrada' : 'saída'}:`, error);
@@ -313,18 +309,8 @@ function showStockMovementPopup(title, type, productId, averageCost, sellingPric
 
 function initStock(db) {
     console.log('Inicializando eventos de estoque...');
-    const navStockGroup = document.getElementById('nav-stock-group');
     const navStockMovements = document.getElementById('nav-stock-movements');
     const navStockProducts = document.getElementById('nav-stock-products');
-
-    if (navStockGroup) {
-        navStockGroup.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleStockSubitems();
-        });
-    } else {
-        console.error('Elemento nav-stock-group não encontrado');
-    }
 
     if (navStockMovements) {
         navStockMovements.addEventListener('click', (e) => {
@@ -362,15 +348,12 @@ function initStock(db) {
             const sellingPrice = parseFloat(document.getElementById('sellingPrice').value);
             const supplier = document.getElementById('supplier').value;
             const category = document.getElementById('category').value;
-            const id = productId || `product${Date.now()}`; // Usa o ID existente ou cria um novo
+            const id = productId || `product${Date.now()}`;
 
             try {
-                // Garante que costPrice e sellingPrice sejam números válidos
                 const averageCost = isNaN(costPrice) ? 0 : costPrice;
                 const validSellingPrice = isNaN(sellingPrice) ? 0 : sellingPrice;
 
-                // Se for um produto novo, define quantidade e custo médio iniciais como 0
-                // A quantidade será ajustada via movimentações de entrada
                 const productData = {
                     id,
                     name,
@@ -382,7 +365,6 @@ function initStock(db) {
                 };
 
                 if (productId) {
-                    // Se for edição, preserva a quantidade e atualiza o custo médio
                     const existingProductDoc = await getDoc(doc(db, 'stock', productId));
                     if (existingProductDoc.exists()) {
                         const existingProduct = existingProductDoc.data();
@@ -407,4 +389,4 @@ function initStock(db) {
     }
 }
 
-export { initStock, loadStockMovements, loadStockProducts };
+export { initStock, loadStockMovements, loadStockProducts, showStockMovementPopup };
