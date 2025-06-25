@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction, addDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection } from './utils.js';
 
 async function createServiceRevenue(db, appointment) {

@@ -5,7 +5,7 @@ import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices } from './services.js';
 import { initSchedules } from './schedules.js';
 import { initStock, loadStockMovements, loadStockProducts } from './stock.js';
-import { initCashFlow, loadCashFlow } from './cashflow.js';
+import { initCashFlow, loadCashFlowSummary } from './cashflow.js';
 import { initDashboard } from './dashboard.js';
 
 console.log('manager.js carregado - Versão: 2025-06-09');
@@ -13,14 +13,12 @@ console.log('manager.js carregado - Versão: 2025-06-09');
 const auth = getAuth();
 console.log('Auth inicializado:', !!auth);
 let db = window.db;
-let isLoadingBarbers = false; // Declarando a variável global
+let isLoadingBarbers = false;
 
-// Função pra esperar o Firestore estar inicializado
 function waitForFirestore() {
     return new Promise((resolve, reject) => {
-        const maxAttempts = 20; // Máximo de tentativas (2 segundos)
+        const maxAttempts = 20;
         let attempts = 0;
-
         const checkDb = setInterval(() => {
             attempts++;
             db = window.db;
@@ -32,11 +30,10 @@ function waitForFirestore() {
                 clearInterval(checkDb);
                 reject(new Error('Firestore não inicializado após 2 segundos'));
             }
-        }, 100); // Verifica a cada 100ms
+        }, 100);
     });
 }
 
-// Função de logout
 async function handleLogout() {
     console.log('Clicou em Sair');
     try {
@@ -151,23 +148,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                 logoutBtn.style.display = 'block';
             });
 
-            const navGroups = document.querySelectorAll('.accordion-button');
-            navGroups.forEach(group => {
-                group.addEventListener('click', (e) => {
+            const navLinks = document.querySelectorAll('#sidebar nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
                     e.preventDefault();
-                    console.log('Clicou no accordion:', group.textContent.trim());
-                });
-            });
-
-            sidebar.querySelectorAll('a').forEach(link => {
-                if (!link.classList.contains('accordion-button')) {
-                    link.addEventListener('click', () => {
+                    if (link.classList.contains('has-subitems')) {
+                        const subitemsId = link.id + '-subitems';
+                        const subitems = document.getElementById(subitemsId);
+                        const icon = link.querySelector('.submenu-icon');
+                        if (subitems) {
+                            const isOpen = subitems.style.display === 'block';
+                            subitems.style.display = isOpen ? 'none' : 'block';
+                            icon.classList.toggle('fa-chevron-up', isOpen);
+                            icon.classList.toggle('fa-chevron-down', !isOpen);
+                            icon.style.transition = 'transform 0.3s';
+                            icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+                        }
+                    } else if (link.id === 'nav-stock-movements') {
+                        showSection('stock-section');
+                        document.getElementById('stock-movements-section').style.display = 'block';
+                        document.getElementById('stock-products-section').style.display = 'none';
+                        loadStockMovements(db);
+                    } else if (link.id === 'nav-stock-products') {
+                        showSection('stock-section');
+                        document.getElementById('stock-movements-section').style.display = 'none';
+                        document.getElementById('stock-products-section').style.display = 'block';
+                        loadStockProducts(db);
+                    } else if (link.id === 'nav-cashflow-summary') {
+                        showSection('cashflow-section');
+                        document.getElementById('cashflow-summary-section').style.display = 'block';
+                        document.getElementById('cashflow-fixed-expense-section').style.display = 'none';
+                        loadCashFlowSummary(db);
+                    } else if (link.id === 'nav-cashflow-fixed-expense') {
+                        showSection('cashflow-section');
+                        document.getElementById('cashflow-summary-section').style.display = 'none';
+                        document.getElementById('cashflow-fixed-expense-section').style.display = 'block';
+                    } else {
+                        showSection(link.id.replace('nav-', '') + '-section');
+                    }
+                    if (!link.classList.contains('has-subitems')) {
                         sidebar.classList.remove('open');
                         sidebarOverlay.classList.remove('active');
                         menuToggle.style.display = 'block';
                         logoutBtn.style.display = 'block';
-                    });
-                }
+                    }
+                });
             });
         } else {
             console.error('Elementos do menu não encontrados');

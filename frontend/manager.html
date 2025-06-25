@@ -112,22 +112,16 @@
             <a href="#" id="nav-appointments" class="active"><i class="fas fa-calendar-check"></i> Agendamentos</a>
             <a href="#" id="nav-services"><i class="fas fa-cut"></i> Serviços</a>
             <a href="#" id="nav-schedules"><i class="fas fa-clock"></i> Horários</a>
-            <div class="accordion" id="stockAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="stockHeading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#stockCollapse" aria-expanded="false" aria-controls="stockCollapse">
-                            <i class="fas fa-boxes"></i> Estoque
-                        </button>
-                    </h2>
-                    <div id="stockCollapse" class="accordion-collapse collapse" aria-labelledby="stockHeading" data-bs-parent="#stockAccordion">
-                        <div class="accordion-body">
-                            <a href="#" class="nav-subitem" id="nav-stock-movements"><i class="fas fa-exchange-alt"></i> Movimentações</a>
-                            <a href="#" class="nav-subitem" id="nav-stock-products"><i class="fas fa-box"></i> Produtos</a>
-                        </div>
-                    </div>
-                </div>
+            <a href="#" id="nav-stock" class="has-subitems"><i class="fas fa-boxes"></i> Estoque <i class="fas fa-chevron-up submenu-icon"></i></a>
+            <div class="subitems" id="nav-stock-subitems" style="display: none;">
+                <a href="#" class="nav-subitem" id="nav-stock-movements"><i class="fas fa-exchange-alt"></i> Movimentações</a>
+                <a href="#" class="nav-subitem" id="nav-stock-products"><i class="fas fa-box"></i> Produtos</a>
             </div>
-            <a href="#" id="nav-cashflow"><i class="fas fa-cash-register"></i> Fluxo de Caixa</a>
+            <a href="#" id="nav-cashflow" class="has-subitems"><i class="fas fa-cash-register"></i> Fluxo de Caixa <i class="fas fa-chevron-up submenu-icon"></i></a>
+            <div class="subitems" id="nav-cashflow-subitems" style="display: none;">
+                <a href="#" class="nav-subitem" id="nav-cashflow-summary"><i class="fas fa-chart-pie"></i> Resumo Financeiro</a>
+                <a href="#" class="nav-subitem" id="nav-cashflow-fixed-expense"><i class="fas fa-plus"></i> Cadastrar Despesa Fixa</a>
+            </div>
             <a href="#" id="nav-dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="#" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
@@ -274,7 +268,7 @@
                 </div>
                 <div id="stockMovementsList"></div>
             </div>
-            <div id="stock-products-section" class="subsection">
+            <div id="stock-products-section" class="subsection" style="display: none;">
                 <h2>Gerenciar Produtos</h2>
                 <form id="stockForm">
                     <input type="hidden" id="productId" name="productId">
@@ -303,27 +297,55 @@
         </div>
 
         <div id="cashflow-section" class="section">
-            <h2>Fluxo de Caixa</h2>
-            <div id="cashflowList"></div>
-            <div class="summary">
-                <p>Total de Receitas: R$<span id="totalRevenue">0.00</span></p>
-                <p>Total de Despesas: R$<span id="totalExpense">0.00</span></p>
-                <p>Saldo Líquido: R$<span id="netBalance">0.00</span></p>
+            <div id="cashflow-summary-section" class="subsection">
+                <h3>Resumo Financeiro</h3>
+                <div class="summary-cards">
+                    <div class="summary-card"><strong>Receita Total:</strong> R$<span id="totalRevenue">0.00</span></div>
+                    <div class="summary-card"><strong>Despesa Total:</strong> R$<span id="totalExpense">0.00</span></div>
+                    <div class="summary-card"><strong>Saldo Líquido:</strong> R$<span id="netBalance">0.00</span></div>
+                </div>
+                <div class="filters">
+                    <label for="cashflowBarberFilter">Barbeiro:</label>
+                    <select id="cashflowBarberFilter">
+                        <option value="all">Todos</option>
+                        <option value="barber1748861790183">Estevan</option>
+                        <option value="barber1748861797732">Inã</option>
+                    </select>
+                    <label for="cashflowDateFilter">Data:</label>
+                    <input type="date" id="cashflowDateFilter">
+                    <label for="cashflowTypeFilter">Tipo:</label>
+                    <select id="cashflowTypeFilter">
+                        <option value="all">Todos</option>
+                        <option value="revenue">Receita</option>
+                        <option value="expense">Despesa</option>
+                    </select>
+                </div>
+                <div id="cashflowList"></div>
             </div>
-            <form id="expenseForm">
-                <label for="expenseAmount">Valor da Despesa:</label>
-                <input type="number" id="expenseAmount" step="0.01" required="">
-                <label for="expenseDescription">Descrição:</label>
-                <input type="text" id="expenseDescription" required="">
-                <label for="expenseCategory">Categoria:</label>
-                <select id="expenseCategory">
-                    <option value="operational_expense">Geral</option>
-                    <option value="rent">Aluguel</option>
-                    <option value="salary">Salário</option>
-                    <option value="utility_bill">Contas</option>
-                </select>
-                <button type="submit">Adicionar Despesa</button>
-            </form>
+            <div id="cashflow-fixed-expense-section" class="subsection" style="display: none;">
+                <h3>Cadastrar Despesa Fixa</h3>
+                <form id="fixedExpenseForm">
+                    <label for="fixedExpenseAmount">Valor (R$):</label>
+                    <input type="number" id="fixedExpenseAmount" step="0.01" required="">
+                    <label for="fixedExpenseDescription">Descrição:</label>
+                    <input type="text" id="fixedExpenseDescription" required="">
+                    <label for="fixedExpenseCategory">Categoria:</label>
+                    <select id="fixedExpenseCategory">
+                        <option value="rent">Aluguel</option>
+                        <option value="salary">Salário</option>
+                        <option value="utility_bill">Contas</option>
+                        <option value="other">Outros</option>
+                    </select>
+                    <label for="fixedExpenseFrequency">Frequência:</label>
+                    <select id="fixedExpenseFrequency">
+                        <option value="monthly">Mensal</option>
+                        <option value="weekly">Semanal</option>
+                    </select>
+                    <label for="fixedExpenseDueDate">Data de Vencimento:</label>
+                    <input type="date" id="fixedExpenseDueDate" required="">
+                    <button type="submit">Salvar Despesa</button>
+                </form>
+            </div>
         </div>
 
         <div id="dashboard-section" class="section">
