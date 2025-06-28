@@ -72,6 +72,8 @@
             background: #c9302c;
         }
     </style>
+    <!-- Adiciona Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.pt_BR.Cg3X8WmgH3E.O/m=gapi_iframes/rt=j/sv=1/d=1/ed=1/rs=AHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw/cb=gapi.loaded_0?le=scs" async></script>
     <script type="module">
         import { firebaseConfig } from './js/config.js';
@@ -297,53 +299,86 @@
         </div>
 
         <div id="cashflow-section" class="section">
+            <h2>Fluxo de Caixa</h2>
+            <!-- Resumo Financeiro -->
             <div id="cashflow-summary-section" class="subsection">
                 <h3>Resumo Financeiro</h3>
-                <div class="summary-cards">
-                    <div class="summary-card"><strong>Receita Total:</strong> R$<span id="totalRevenue">0.00</span></div>
-                    <div class="summary-card"><strong>Despesa Total:</strong> R$<span id="totalExpense">0.00</span></div>
-                    <div class="summary-card"><strong>Saldo Líquido:</strong> R$<span id="netBalance">0.00</span></div>
+                <div class="cashflow-summary">
+                    <div class="summary-card revenue">
+                        <h4>Receitas</h4>
+                        <p>R$ <span id="totalRevenueCashFlow">0.00</span></p>
+                    </div>
+                    <div class="summary-card expense">
+                        <h4>Despesas</h4>
+                        <p>R$ <span id="totalExpenseCashFlow">0.00</span></p>
+                    </div>
+                    <div class="summary-card balance">
+                        <h4>Saldo Líquido</h4>
+                        <p>R$ <span id="netBalanceCashFlow">0.00</span></p>
+                    </div>
                 </div>
-                <div class="filters">
-                    <label for="cashflowBarberFilter">Barbeiro:</label>
-                    <select id="cashflowBarberFilter">
-                        <option value="all">Todos</option>
-                        <option value="barber1748861790183">Estevan</option>
-                        <option value="barber1748861797732">Inã</option>
-                    </select>
-                    <label for="cashflowDateFilter">Data:</label>
-                    <input type="date" id="cashflowDateFilter">
-                    <label for="cashflowTypeFilter">Tipo:</label>
-                    <select id="cashflowTypeFilter">
-                        <option value="all">Todos</option>
-                        <option value="revenue">Receita</option>
-                        <option value="expense">Despesa</option>
-                    </select>
+                <!-- Filtros -->
+                <div class="cashflow-filters">
+                    <div class="filter-controls">
+                        <label for="cashFlowPeriod">Período:</label>
+                        <select id="cashFlowPeriod">
+                            <option value="today">Hoje</option>
+                            <option value="this_week">Esta Semana</option>
+                            <option value="this_month" selected>Este Mês</option>
+                            <option value="this_year">Este Ano</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                        <input type="date" id="cashFlowStartDate" style="display: none;">
+                        <input type="date" id="cashFlowEndDate" style="display: none;">
+                        <label for="cashFlowTypeFilter">Tipo:</label>
+                        <select id="cashFlowTypeFilter">
+                            <option value="all">Todos</option>
+                            <option value="revenue">Receitas</option>
+                            <option value="expense">Despesas</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="cashflowList"></div>
+                <!-- Gráficos -->
+                <div class="cashflow-charts">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+                <!-- Lista de Transações -->
+                <div class="cashflow-transactions-list">
+                    <h3>Transações Detalhadas</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Origem</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cashFlowTransactionsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
+            <!-- Formulário de Registro de Despesas Manuais -->
             <div id="cashflow-fixed-expense-section" class="subsection" style="display: none;">
-                <h3>Cadastrar Despesa Fixa</h3>
-                <form id="fixedExpenseForm">
-                    <label for="fixedExpenseAmount">Valor (R$):</label>
-                    <input type="number" id="fixedExpenseAmount" step="0.01" required="">
-                    <label for="fixedExpenseDescription">Descrição:</label>
-                    <input type="text" id="fixedExpenseDescription" required="">
-                    <label for="fixedExpenseCategory">Categoria:</label>
-                    <select id="fixedExpenseCategory">
+                <h3>Registrar Nova Despesa</h3>
+                <form id="newExpenseForm">
+                    <label for="expenseAmount">Valor (R$):</label>
+                    <input type="number" id="expenseAmount" step="0.01" required>
+                    <label for="expenseDescription">Descrição:</label>
+                    <input type="text" id="expenseDescription" required>
+                    <label for="expenseCategory">Categoria:</label>
+                    <select id="expenseCategory">
+                        <option value="operational_expense">Operacional</option>
                         <option value="rent">Aluguel</option>
-                        <option value="salary">Salário</option>
-                        <option value="utility_bill">Contas</option>
+                        <option value="salary">Salários</option>
+                        <option value="utility_bill">Contas de Consumo</option>
+                        <option value="marketing">Marketing</option>
                         <option value="other">Outros</option>
                     </select>
-                    <label for="fixedExpenseFrequency">Frequência:</label>
-                    <select id="fixedExpenseFrequency">
-                        <option value="monthly">Mensal</option>
-                        <option value="weekly">Semanal</option>
-                    </select>
-                    <label for="fixedExpenseDueDate">Data de Vencimento:</label>
-                    <input type="date" id="fixedExpenseDueDate" required="">
-                    <button type="submit">Salvar Despesa</button>
+                    <label for="expenseDate">Data:</label>
+                    <input type="date" id="expenseDate" required>
+                    <button type="submit">Registrar Despesa</button>
                 </form>
             </div>
         </div>
@@ -432,4 +467,4 @@
     </script>
     <iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" tabindex="-1" vspace="0" width="100%" aria-hidden="true" id="I0_1749520766699" name="I0_1749520766699" src="https://barbearia-estevan.firebaseapp.com/__/auth/iframe?apiKey=AIzaSyAoQo2EVxEypXMirJjfmgiujeR3ij0ZzNU&appName=%5BDEFAULT%5D&v=10.14.1&eid=p&usegapi=1&jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.pt_BR.Cg3X8WmgH3E.O%2Fd%3D1%2Frs%3DAHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw%2Fm%3D__features__#id=I0_1749520766699&_gfid=I0_1749520766699&parent=http%3A%2F%2F127.0.0.1%3A5500&pfname=&rpctoken=16509020" style="position: absolute; top: -100px; width: 1px; height: 1px;"></iframe><div id="dgwmh3ykva" style="display: block;"></div>
 </body>
-</html>
+</html> 
