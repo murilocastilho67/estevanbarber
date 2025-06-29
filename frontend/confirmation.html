@@ -5,81 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Confirmação</title>
     <link rel="stylesheet" href="css/style.css">
-    <script type="module">
-        import { firebaseConfig } from './js/config.js';
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                console.error('Usuário não autenticado. Redirecionando para login...');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const selectedServices = JSON.parse(sessionStorage.getItem('selectedServices') || '[]');
-            const selectedBarberId = sessionStorage.getItem('selectedBarberId');
-            const selectedDate = sessionStorage.getItem('selectedDate');
-            const selectedTime = sessionStorage.getItem('selectedTime');
-
-            if (!selectedServices.length || !selectedBarberId || !selectedDate || !selectedTime) {
-                console.error('Dados de agendamento incompletos. Redirecionando para services.html...');
-                window.location.href = 'services.html';
-                return;
-            }
-
-            const totalPrice = selectedServices.reduce((sum, service) => sum + service.price, 0);
-            const totalTime = selectedServices.reduce((sum, service) => sum + service.duration, 0);
-
-            const barberDoc = await getDoc(doc(db, 'barbers', selectedBarberId));
-            const barberName = barberDoc.exists() ? barberDoc.data().name : 'Desconhecido';
-
-            const servicesList = document.getElementById('servicesList');
-            selectedServices.forEach(service => {
-                const li = document.createElement('li');
-                li.textContent = `${service.name} - R$${service.price.toFixed(2)} (${service.duration} min)`;
-                servicesList.appendChild(li);
-            });
-
-            document.getElementById('barber').textContent = barberName;
-            document.getElementById('date').textContent = selectedDate.split('-').reverse().join('/');
-            document.getElementById('time').textContent = selectedTime;
-            document.getElementById('totalPrice').textContent = totalPrice.toFixed(2);
-            document.getElementById('totalTime').textContent = totalTime;
-
-            document.getElementById('confirmButton').addEventListener('click', async () => {
-                const appointmentId = `appt${Date.now()}`;
-                await setDoc(doc(db, 'appointments', appointmentId), {
-                    id: appointmentId,
-                    userId: user.uid,
-                    barberId: selectedBarberId,
-                    services: selectedServices,
-                    date: selectedDate,
-                    time: selectedTime,
-                    totalPrice: totalPrice,
-                    totalTime: totalTime,
-                    status: 'confirmed',
-                    createdAt: new Date().toISOString()
-                });
-
-                sessionStorage.removeItem('selectedServices');
-                sessionStorage.removeItem('selectedBarberId');
-                sessionStorage.removeItem('selectedDate');
-                sessionStorage.removeItem('selectedTime');
-
-                window.location.href = 'services.html';
-            });
-
-            document.getElementById('cancelButton').addEventListener('click', () => {
-                window.location.href = 'services.html';
-            });
-        });
-    </script>
+    <!-- Adiciona o Font Awesome via CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script type="module" src="js/confirmation.js"></script>
 </head>
 <body class="centered">
     <div class="container">
@@ -95,6 +23,17 @@
         <div class="nav-buttons">
             <button id="confirmButton">Confirmar</button>
             <button id="cancelButton">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Pop-up personalizado -->
+    <div class="popup-overlay" id="confirmationPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div class="popup">
+            <h3 id="popupTitle">Estevan Barber</h3>
+            <p id="popupMessage"></p>
+            <div class="popup-buttons">
+                <button class="popup-button confirm" id="closePopup">OK</button>
+            </div>
         </div>
     </div>
 </body>

@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 console.log('services.js carregado - Versão: 2025-06-05');
@@ -105,6 +105,18 @@ auth.onAuthStateChanged((user) => {
     }).finally(() => {
         isLoadingBarbers = false;
     });
+
+    // Verifica o parâmetro 'section' após autenticação
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    if (section === 'appointments' && user) {
+        console.log('Parâmetro section=appointments detectado, exibindo agendamentos');
+        showSection('appointmentsSection');
+        loadAppointments();
+    } else {
+        // Exibe a seção "Novo Agendamento" por padrão
+        showSection('appointmentForm');
+    }
 });
 
 async function loadBarbers() {
@@ -112,8 +124,8 @@ async function loadBarbers() {
         if (!db) throw new Error('Firestore não inicializado');
         console.log('Carregando barbeiros...');
         const barberSelect = document.getElementById('barber');
+        barberSelect.innerHTML = '<option value="">Selecione um profissional</option>'; // Opção padrão
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
-        barberSelect.innerHTML = '';
         if (barbersSnapshot.empty) {
             document.getElementById('servicesList').innerHTML = '<p>Nenhum barbeiro encontrado. Configure os barbeiros no Firestore.</p>';
             return;
@@ -125,8 +137,7 @@ async function loadBarbers() {
             option.textContent = barber.name;
             barberSelect.appendChild(option);
         });
-        console.log('Barbeiros carregados, selecionando o primeiro:', barbersSnapshot.docs[0].data().id);
-        await loadServices(barbersSnapshot.docs[0].data().id);
+        // Não seleciona o primeiro automaticamente
     } catch (error) {
         console.error('Erro ao carregar barbeiros:', error);
         document.getElementById('servicesList').innerHTML = '<p>Erro ao carregar barbeiros: ' + error.message + '</p>';
@@ -373,13 +384,15 @@ async function loadAppointments() {
         const appointmentsQuery = query(
             collection(db, 'appointments'),
             where('userId', '==', auth.currentUser.uid),
-            where('status', 'in', ['confirmed', 'completed', 'no-show'])
+            where('status', 'in', ['confirmed', 'completed', 'no-show', 'canceled']),
+            orderBy('createdAt', 'desc'),
+            limit(4)
         );
         console.log('Query criada:', appointmentsQuery);
 
         console.log('Executando query...');
         const appointmentsSnapshot = await getDocs(appointmentsQuery);
-        console.log('Total de agendamentos encontrados:', appointmentsSnapshot.size);
+        console.log('Total de agendamentos retornados:', appointmentsSnapshot.size);
 
         if (appointmentsSnapshot.empty) {
             console.log('Nenhum agendamento encontrado');
@@ -387,16 +400,35 @@ async function loadAppointments() {
             return;
         }
 
-        console.log('Iterando agendamentos...');
-        for (const docSnapshot of appointmentsSnapshot.docs) {
-            console.log('Processando agendamento ID:', docSnapshot.id);
-            const appt = docSnapshot.data();
-            console.log('Dados do agendamento:', JSON.stringify(appt));
+        const appointments = await Promise.all(appointmentsSnapshot.docs.map(async (docSnapshot) => {
+            const data = docSnapshot.data();
+            if (data.createdAt && data.createdAt._methodName === 'serverTimestamp') {
+                console.log(`Releitura para ${docSnapshot.id} por serverTimestamp pendente`);
+                const refreshedDoc = await getDoc(docSnapshot.ref);
+                return { id: docSnapshot.id, ...refreshedDoc.data(), createdAtTemp: data.createdAtTemp || Date.now() };
+            }
+            return { id: docSnapshot.id, ...data, createdAtTemp: data.createdAtTemp || (data.createdAt && data.createdAt._seconds ? new Date(data.createdAt._seconds * 1000) : Date.now()) };
+        }));
+
+        // Ordenação local como fallback usando createdAtTemp
+        appointments.sort((a, b) => {
+            const dateA = a.createdAt && a.createdAt._seconds ? new Date(a.createdAt._seconds * 1000) : new Date(a.createdAtTemp || 0);
+            const dateB = b.createdAt && b.createdAt._seconds ? new Date(b.createdAt._seconds * 1000) : new Date(b.createdAtTemp || 0);
+            console.log(`Sorting: ${a.id} (${dateA}) vs ${b.id} (${dateB})`);
+            return dateB - dateA;
+        });
+
+        console.log('Appointments after resolution:', appointments.map(a => `${a.id} - ${a.createdAt && a.createdAt._seconds ? new Date(a.createdAt._seconds * 1000) : (a.createdAtTemp ? new Date(a.createdAtTemp) : 'no createdAt')}`));
+
+        console.log('Iterando agendamentos (limitado a 4)...');
+        for (const docData of appointments) {
+            console.log('Processando agendamento ID:', docData.id);
+            console.log('Dados do agendamento:', JSON.stringify(docData));
 
             let barberName = 'Desconhecido';
             try {
-                console.log('Buscando barbeiro com ID:', appt.barberId);
-                const barberRef = doc(db, 'barbers', appt.barberId);
+                console.log('Buscando barbeiro com ID:', docData.barberId);
+                const barberRef = doc(db, 'barbers', docData.barberId);
                 console.log('Referência do barbeiro criada:', barberRef.path);
                 const barberDoc = await getDoc(barberRef);
                 console.log('Documento do barbeiro obtido:', barberDoc.exists());
@@ -404,57 +436,67 @@ async function loadAppointments() {
                     barberName = barberDoc.data().name;
                     console.log('Barbeiro encontrado:', barberName);
                 } else {
-                    console.warn(`Barbeiro ${appt.barberId} não encontrado`);
+                    console.warn(`Barbeiro ${docData.barberId} não encontrado`);
                 }
             } catch (error) {
-                console.error(`Erro ao buscar barbeiro ${appt.barberId}:`, error);
+                console.error(`Erro ao buscar barbeiro ${docData.barberId}:`, error);
             }
 
             console.log('Montando card de agendamento...');
-            const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
-            const dateParts = appt.date.split('-');
+            const services = docData.services ? docData.services.map(s => s.name).join(', ') : 'Nenhum serviço';
+            const dateParts = docData.date.split('-');
             const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-            const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
-                            appt.status === 'completed' ? 'Realizado' :
-                            appt.status === 'no-show' ? 'Não Compareceu' : appt.status;
+            const statusPt = docData.status === 'confirmed' ? 'Confirmado' :
+                            docData.status === 'completed' ? 'Realizado' :
+                            docData.status === 'no-show' ? 'Não Compareceu' :
+                            docData.status === 'canceled' ? 'Cancelado' : docData.status;
 
             let action = '';
             let actionMessage = '';
-            if (appt.status === 'confirmed') {
+            if (docData.status === 'confirmed') {
                 console.log('Agendamento confirmado, verificando cancelamento...');
-                const apptDateTime = new Date(`${appt.date}T${appt.time}:00-03:00`);
+                const apptDateTime = new Date(`${docData.date}T${docData.time}:00-03:00`);
                 const now = new Date();
-                const oneHourBefore = new Date(apptDateTime.getTime() - 60 * 60 * 1000);
-                console.log('Data do agendamento:', apptDateTime, 'Agora:', now, 'Uma hora antes:', oneHourBefore);
-                if (now < oneHourBefore) {
-                    action = `<button class="action-btn cancel-btn" data-id="${docSnapshot.id}">Cancelar</button>`;
+                const twoHoursBefore = new Date(apptDateTime.getTime() - 2 * 60 * 60 * 1000); // 2 horas antes
+                console.log('Data do agendamento:', apptDateTime, 'Agora:', now, '2 horas antes:', twoHoursBefore);
+                if (now < twoHoursBefore) {
+                    action = `<button class="action-btn cancel-btn" data-id="${docData.id}">Cancelar</button>`;
                     actionMessage = '';
                 } else {
                     action = '';
-                    actionMessage = 'Não é possível cancelar. Contate a barbearia.';
+                    actionMessage = 'Prazo de cancelamento expirado. Contate a barbearia.';
+                    showPopup('O prazo de cancelamento (2 horas antes) expirou. Por favor, contate a barbearia para desbloqueio.');
                 }
-            } else if (appt.status === 'completed') {
+            } else if (docData.status === 'completed') {
                 console.log('Agendamento realizado, verificando feedback...');
                 let hasFeedback = false;
+                let feedbackText = '';
                 try {
                     const feedbackQuery = query(
                         collection(db, 'feedbacks'),
-                        where('appointmentId', '==', docSnapshot.id)
+                        where('appointmentId', '==', docData.id),
+                        where('userId', '==', auth.currentUser.uid)
                     );
                     console.log('Query de feedback criada:', feedbackQuery);
                     const feedbackSnapshot = await getDocs(feedbackQuery);
                     console.log('Feedbacks encontrados:', feedbackSnapshot.size);
-                    hasFeedback = !feedbackSnapshot.empty;
+                    if (!feedbackSnapshot.empty) {
+                        hasFeedback = true;
+                        feedbackText = feedbackSnapshot.docs[0].data().comment || 'Sem comentário';
+                        if (feedbackSnapshot.size > 1) {
+                            console.warn('Múltiplos feedbacks encontrados para appointmentId:', docData.id);
+                        }
+                    }
                 } catch (error) {
-                    console.warn('Erro ao verificar feedback, assumindo nenhum feedback:', error);
+                    console.warn('Erro ao verificar feedback:', error);
                     hasFeedback = false;
                 }
-                if (!hasFeedback) {
-                    action = `<button class="action-btn feedback-btn" data-id="${docSnapshot.id}">Avaliar</button>`;
-                    actionMessage = '';
-                } else {
+                if (hasFeedback) {
                     action = '';
-                    actionMessage = 'Feedback já enviado.';
+                    actionMessage = `Feedback: ${feedbackText}`;
+                } else {
+                    action = `<button class="action-btn feedback-btn" data-id="${docData.id}">Avaliar</button>`;
+                    actionMessage = '';
                 }
             } else {
                 action = '';
@@ -469,15 +511,15 @@ async function loadAppointments() {
                 <p><strong>Barbeiro:</strong> ${barberName}</p>
                 <p><strong>Serviços:</strong> ${services}</p>
                 <p><strong>Data:</strong> ${formattedDate}</p>
-                <p><strong>Horário:</strong> ${appt.time}</p>
-                <p><strong>Valor:</strong> R$${appt.totalPrice.toFixed(2)}</p>
+                <p><strong>Horário:</strong> ${docData.time}</p>
+                <p><strong>Valor:</strong> R$${docData.totalPrice.toFixed(2)}</p>
                 <p><strong>Status:</strong> ${statusPt}${actionMessage ? ` - ${actionMessage}` : ''}</p>
                 <div class="appointment-actions" style="display: ${action ? 'flex' : 'none'}">
                     ${action}
                 </div>
             `;
             appointmentsTable.appendChild(card);
-            console.log('Card adicionado à seção:', docSnapshot.id);
+            console.log('Card adicionado à seção:', docData.id);
         }
 
         console.log('Configurando eventos dos botões...');
@@ -489,7 +531,7 @@ async function loadAppointments() {
                         console.log('Cancelando agendamento ID:', btn.dataset.id);
                         await setDoc(doc(db, 'appointments', btn.dataset.id), { status: 'canceled' }, { merge: true });
                         console.log('Agendamento cancelado');
-                        loadAppointments();
+                        loadAppointments(); // Recarrega a lista
                     } catch (error) {
                         console.error('Erro ao cancelar agendamento:', error);
                         showPopup('Erro ao cancelar agendamento: ' + error.message);
@@ -530,32 +572,30 @@ document.addEventListener('DOMContentLoaded', () => {
         menuToggle.addEventListener('click', () => {
             sidebar.classList.add('open');
             sidebarOverlay.classList.add('active');
-            menuToggle.style.display = 'none'; // Esconde o botão de hamburger
-            logoutBtn.style.display = 'none'; // Esconde o botão de logout
+            menuToggle.style.display = 'none';
+            logoutBtn.style.display = 'none';
         });
 
         menuClose.addEventListener('click', () => {
             sidebar.classList.remove('open');
             sidebarOverlay.classList.remove('active');
-            menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-            logoutBtn.style.display = 'block'; // Mostra o botão de logout
+            menuToggle.style.display = 'block';
+            logoutBtn.style.display = 'block';
         });
 
-        // Fecha o menu ao clicar no overlay
         sidebarOverlay.addEventListener('click', () => {
             sidebar.classList.remove('open');
             sidebarOverlay.classList.remove('active');
-            menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-            logoutBtn.style.display = 'block'; // Mostra o botão de logout
+            menuToggle.style.display = 'block';
+            logoutBtn.style.display = 'block';
         });
 
-        // Fecha o menu ao clicar em um link da sidebar
         sidebar.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 sidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
-                menuToggle.style.display = 'block'; // Mostra o botão de hamburger
-                logoutBtn.style.display = 'block'; // Mostra o botão de logout
+                menuToggle.style.display = 'block';
+                logoutBtn.style.display = 'block';
             });
         });
     } else {
@@ -596,8 +636,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const chooseScheduleBtn = document.getElementById('chooseSchedule');
     if (chooseScheduleBtn) {
-        chooseScheduleBtn.addEventListener('click', () => {
+        chooseScheduleBtn.addEventListener('click', async () => {
             console.log('Clicou em escolher horário');
+            const barberSelect = document.getElementById('barber');
+            if (!barberSelect.value) {
+                await showPopup('Por favor, selecione um profissional antes de continuar.');
+                return;
+            }
             document.getElementById('calendar').style.display = 'block';
         });
     } else {
@@ -622,7 +667,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nextBtn) {
         nextBtn.addEventListener('click', async () => {
             const selectedTime = sessionStorage.getItem('selectedTime');
+            const barberSelect = document.getElementById('barber');
             console.log('Clicou em próximo, horário selecionado:', selectedTime);
+            if (!barberSelect.value) {
+                await showPopup('Por favor, selecione um profissional antes de avançar.');
+                return;
+            }
             if (!selectedTime) {
                 await showPopup('Selecione um horário antes de avançar.');
                 return;
@@ -650,12 +700,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             console.log('Clicou em visualizar agendamentos via barra lateral');
             showSection('appointmentsSection');
-            loadAppointments(); // Carrega os agendamentos ao exibir a seção
+            loadAppointments();
         });
     } else {
         console.error('Elemento viewAppointmentsLink não encontrado');
     }
-
-    // Exibe a seção "Novo Agendamento" automaticamente ao carregar a página
-    showSection('appointmentForm');
 });

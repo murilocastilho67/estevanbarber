@@ -1,6 +1,6 @@
 import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { showPopup, showSection } from './utils.js';
-import { initBarbers, loadBarbers } from './barbers.js';
+import { initBarbers, loadBarbers, addOrUpdateBarber } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices } from './services.js';
 import { initSchedules } from './schedules.js';
@@ -67,16 +67,20 @@ auth.onAuthStateChanged((user) => {
     console.log('Usuário autenticado:', user.email);
     isLoadingBarbers = true;
     waitForFirestore().then((db) => {
-        loadBarbers(db).catch(error => {
-            console.error('Erro no onAuthStateChanged:', error);
-            const servicesList = document.getElementById('servicesList');
-            if (servicesList) {
-                servicesList.innerHTML = '<p>Erro ao verificar autenticação: ' + error.message + '</p>';
+        window.db = db; // Garante que db esteja disponível globalmente
+        initBarbers(db).catch(error => {
+            console.error('Erro ao inicializar barbeiros:', error);
+            const barbersList = document.getElementById('barbersList');
+            if (barbersList) {
+                barbersList.innerHTML = '<div class="col"><p class="text-center">Erro ao inicializar barbeiros: ' + error.message + '</p></div>';
             }
         }).finally(() => {
             isLoadingBarbers = false;
             console.log('loadBarbers finalizado');
         });
+    }).catch(error => {
+        console.error('Erro ao esperar Firestore:', error);
+        showPopup('Erro ao inicializar o painel: ' + error.message);
     });
 });
 
@@ -196,6 +200,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         } else {
             console.error('Elementos do menu não encontrados');
+        }
+
+        // Adicionar evento ao formulário de barbeiro
+        const barberForm = document.getElementById('barberForm');
+        if (barberForm) {
+            barberForm.addEventListener('submit', (event) => {
+                addOrUpdateBarber(db, event);
+            });
+        } else {
+            console.error('Elemento barberForm não encontrado');
+        }
+
+        // Auto-focus no input
+        const barberNameInput = document.getElementById('barberName');
+        if (barberNameInput) {
+            barberNameInput.focus();
+        } else {
+            console.error('Elemento barberNameInput não encontrado');
+        }
+
+        // Validação em tempo real
+        const barberNameInputElement = document.getElementById('barberName');
+        if (barberNameInputElement) {
+            barberNameInputElement.addEventListener('input', async () => {
+                const name = barberNameInputElement.value.trim();
+                if (!name) {
+                    barberNameInputElement.setCustomValidity('Campo obrigatório');
+                } else {
+                    const barbersSnapshot = await getDocs(collection(db, 'barbers'));
+                    const existingBarber = barbersSnapshot.docs.find(doc => doc.data().name.toLowerCase() === name.toLowerCase() && doc.id !== document.getElementById('barberId').value);
+                    if (existingBarber) {
+                        barberNameInputElement.setCustomValidity('Nome já existente');
+                    } else {
+                        barberNameInputElement.setCustomValidity('');
+                    }
+                }
+                barberNameInputElement.reportValidity();
+            });
+        } else {
+            console.error('Elemento barberNameInput não encontrado para validação');
         }
     } catch (error) {
         console.error('Erro ao inicializar o painel do gerente:', error);

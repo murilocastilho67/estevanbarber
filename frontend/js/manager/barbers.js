@@ -1,143 +1,118 @@
-import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-import { showPopup, showSection } from './utils.js';
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { showPopup } from './utils.js';
 
-async function loadBarbers(db) {
+export async function initBarbers(db) {
+    console.log('Inicializando gerenciamento de barbeiros');
+    window.db = db;
+    await loadBarbers(db);
+}
+
+export async function loadBarbers(db) {
     try {
         if (!db) throw new Error('Firestore não inicializado');
         console.log('Carregando barbeiros...');
-        const barberSelect = document.getElementById('barberFilter');
-        const serviceBarberSelect = document.getElementById('serviceBarber');
-        const scheduleBarberSelect = document.getElementById('scheduleBarber');
-        const barbersSnapshot = await getDocs(collection(db, 'barbers'));
-        if (barbersSnapshot.empty) {
-            console.warn('Nenhum barbeiro encontrado');
-            return;
-        }
-        barberSelect.innerHTML = '<option value="all">Todos</option>';
-        serviceBarberSelect.innerHTML = '';
-        scheduleBarberSelect.innerHTML = '';
-        barbersSnapshot.forEach((docSnapshot) => {
-            const barber = docSnapshot.data();
-            const option = document.createElement('option');
-            option.value = barber.id;
-            option.textContent = barber.name;
-            barberSelect.appendChild(option);
-            serviceBarberSelect.appendChild(option.cloneNode(true));
-            scheduleBarberSelect.appendChild(option.cloneNode(true));
-        });
-        await loadBarbersList(db);
-    } catch (error) {
-        console.error('Erro ao carregar barbeiros:', error);
-        showPopup('Erro ao carregar barbeiros: ' + error.message);
-    }
-}
-
-async function loadBarbersList(db) {
-    try {
-        console.log('Carregando lista de barbeiros...');
         const barbersList = document.getElementById('barbersList');
         barbersList.innerHTML = '';
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         if (barbersSnapshot.empty) {
-            barbersList.innerHTML = '<p>Nenhum barbeiro cadastrado.</p>';
+            barbersList.innerHTML = '<div class="col"><p class="text-center">Nenhum barbeiro encontrado.</p></div>';
             return;
         }
         barbersSnapshot.forEach((docSnapshot) => {
             const barber = docSnapshot.data();
             const card = document.createElement('div');
-            card.className = 'barber-card';
+            card.className = 'col';
             card.innerHTML = `
-                <div class="barber-info">
-                    <h4>${barber.name}</h4>
-                </div>
-                <div class="barber-actions">
-                    <button class="action-btn edit-barber" data-id="${docSnapshot.id}">Editar</button>
-                    <button class="action-btn delete-barber" data-id="${docSnapshot.id}">Excluir</button>
+                <div class="card barber-card">
+                    <div class="card-body text-center">
+                        <div class="barber-photo">${barber.name.charAt(0)}</div>
+                        <h5 class="card-title barber-name">${barber.name}</h5>
+                        <div class="barber-actions">
+                            <button class="btn btn-outline-secondary btn-sm edit-btn" title="Editar" data-id="${barber.id}"><i class="fas fa-pen"></i></button>
+                            <button class="btn btn-outline-danger btn-sm delete-btn" title="Excluir" data-id="${barber.id}"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
                 </div>
             `;
             barbersList.appendChild(card);
         });
 
-        // Adiciona eventos aos botões de editar
-        document.querySelectorAll('.edit-barber').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const barberId = btn.dataset.id;
-                try {
-                    const barberDoc = await getDoc(doc(db, 'barbers', barberId));
-                    if (barberDoc.exists()) {
-                        const barber = barberDoc.data();
-                        document.getElementById('barberName').value = barber.name;
-                        document.getElementById('barberId').value = barberId; // Campo oculto pra edição
-                        document.getElementById('barberForm').querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
-                    }
-                } catch (error) {
-                    console.error('Erro ao carregar barbeiro para edição:', error);
-                    showPopup('Erro ao carregar barbeiro para edição: ' + error.message);
-                }
+        // Adicionar eventos aos botões
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                console.log('Editar barbeiro ID:', btn.dataset.id);
+                const name = btn.closest('.card').querySelector('.barber-name').textContent;
+                document.getElementById('barberId').value = btn.dataset.id;
+                document.getElementById('barberName').value = name;
             });
         });
 
-        // Adiciona eventos aos botões de excluir
-        document.querySelectorAll('.delete-barber').forEach(btn => {
+        document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                const confirmed = await showPopup('Excluir barbeiro?', true);
+                console.log('Excluir barbeiro ID:', btn.dataset.id);
+                const confirmed = await showPopup('Tem certeza que deseja excluir este barbeiro?', true, () => {
+                    deleteBarber(db, btn.dataset.id);
+                });
                 if (confirmed) {
-                    try {
-                        await deleteDoc(doc(db, 'barbers', btn.dataset.id));
-                        console.log('Barbeiro excluído:', btn.dataset.id);
-                        loadBarbers(db);
-                        showPopup('Barbeiro excluído com sucesso!');
-                    } catch (error) {
-                        console.error('Erro ao excluir barbeiro:', error);
-                        showPopup('Erro ao excluir barbeiro: ' + error.message);
-                    }
+                    deleteBarber(db, btn.dataset.id);
                 }
             });
         });
     } catch (error) {
-        console.error('Erro ao carregar lista de barbeiros:', error);
-        showPopup('Erro ao carregar lista de barbeiros: ' + error.message);
+        console.error('Erro ao carregar barbeiros:', error);
+        const barbersList = document.getElementById('barbersList');
+        if (barbersList) {
+            barbersList.innerHTML = '<div class="col"><p class="text-center">Erro ao carregar barbeiros: ' + error.message + '</p></div>';
+        }
     }
 }
 
-function initBarbers(db) {
-    console.log('Inicializando eventos de barbeiros...');
-    const navBarbers = document.getElementById('nav-barbers');
-    if (navBarbers) {
-        navBarbers.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Clicou em Barbeiros');
-            showSection('barbers-section');
-            loadBarbers(db);
-        });
-    } else {
-        console.error('Elemento nav-barbers não encontrado');
-    }
-
-    const barberForm = document.getElementById('barberForm');
-    if (barberForm) {
-        barberForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const barberId = document.getElementById('barberId').value;
-            const name = document.getElementById('barberName').value;
-            const id = barberId || `barber${Date.now()}`; // Usa o ID existente ou cria um novo
-
-            try {
-                await setDoc(doc(db, 'barbers', id), { id, name });
-                console.log('Barbeiro salvo:', id);
-                loadBarbers(db);
-                document.getElementById('barberForm').reset();
-                document.getElementById('barberId').value = '';
-                document.getElementById('barberForm').querySelector('button[type="submit"]').textContent = 'Adicionar Barbeiro';
-                showPopup('Barbeiro salvo com sucesso!');
-            } catch (error) {
-                console.error('Erro ao salvar barbeiro:', error);
-                showPopup('Erro ao salvar barbeiro: ' + error.message);
-            }
-        });
-    } else {
-        console.error('Elemento barberForm não encontrado');
+async function deleteBarber(db, barberId) {
+    try {
+        await deleteDoc(doc(db, 'barbers', barberId));
+        console.log('Barbeiro excluído com ID:', barberId);
+        await loadBarbers(db);
+    } catch (error) {
+        console.error('Erro ao excluir barbeiro:', error);
+        showPopup('Erro ao excluir barbeiro: ' + error.message);
     }
 }
 
-export { initBarbers, loadBarbers };
+export async function addOrUpdateBarber(db, event) {
+    event.preventDefault();
+    try {
+        const name = document.getElementById('barberName').value.trim();
+        const barberId = document.getElementById('barberId').value;
+
+        if (!name) {
+            showPopup('Campo obrigatório: Nome do barbeiro.');
+            return;
+        }
+
+        // Verifica se o nome já existe (exceto se for edição do mesmo barbeiro)
+        const barbersSnapshot = await getDocs(collection(db, 'barbers'));
+        const existingBarber = barbersSnapshot.docs.find(doc => doc.data().name.toLowerCase() === name.toLowerCase() && doc.id !== barberId);
+        if (existingBarber) {
+            showPopup('Nome já existente. Escolha outro nome.');
+            return;
+        }
+
+        if (barberId) {
+            // Atualização
+            await setDoc(doc(db, 'barbers', barberId), { name }, { merge: true });
+            console.log('Barbeiro atualizado com ID:', barberId);
+        } else {
+            // Adição
+            const newId = `barber${Date.now()}`;
+            await setDoc(doc(db, 'barbers', newId), { id: newId, name });
+            console.log('Novo barbeiro adicionado com ID:', newId);
+        }
+
+        document.getElementById('barberId').value = '';
+        document.getElementById('barberName').value = '';
+        await loadBarbers(db);
+    } catch (error) {
+        console.error('Erro ao adicionar/atualizar barbeiro:', error);
+        showPopup('Erro ao adicionar/atualizar barbeiro: ' + error.message);
+    }
+}

@@ -985,6 +985,68 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
     width: auto;
 }
 
+/* Estilos do pop-up personalizado */
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000; /* Aumentado pra ficar acima de tudo */
+    justify-content: center;
+    align-items: center;
+}
+
+.popup {
+    background: #fff;
+    color: #4b2e1e;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 400px;
+    width: 80%;
+    border: 2px solid #4b2e1e;
+}
+
+.popup h3 {
+    margin: 0 0 10px;
+    color: #4b2e1e;
+    font-size: 1.5em;
+}
+
+.popup p {
+    margin: 0 0 20px;
+    font-size: 1em;
+    color: #4b2e1e;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.popup-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s;
+}
+
+.popup-button.confirm {
+    background: #4b2e1e;
+    color: #fff;
+}
+
+.popup-button.confirm:hover {
+    background: #6b4e31;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     body.manager-layout {
@@ -1390,5 +1452,103 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
         .submenu-icon {
             font-size: 0.9rem;
         }
+    }
+
+    /* Estilos para a seção de barbeiros - Redesign */
+    #barbers-section .barber-card {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+
+    #barbers-section .barber-card:hover {
+        transform: translateY(-2px);
+    }
+
+    #barbers-section .barber-photo {
+        font-size: 40px;
+        color: #8B4513;
+        background: #f0f0f0;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+    }
+
+    #barbers-section .barber-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #8B4513;
+        margin-bottom: 10px;
+    }
+
+    #barbers-section .barber-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    #barbers-section .edit-btn, #barbers-section .delete-btn {
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+
+    #barbers-section .edit-btn {
+        background-color: #DAA520;
+        color: #fff;
+    }
+
+    #barbers-section .edit-btn:hover {
+        background-color: #c19b1a;
+    }
+
+    #barbers-section .delete-btn {
+        background-color: #d9534f;
+        color: #fff;
+    }
+
+    #barbers-section .delete-btn:hover {
+        background-color: #c9302c;
+    }
+
+    /* Ajustes responsivos para barbeiros */
+    @media (max-width: 768px) {
+        #barbersList {
+            grid-template-columns: 1fr !important;
+        }
+
+        #barbers-section .barber-card {
+            padding: 0.8rem;
+        }
+
+        #barbers-section .barber-photo {
+            width: 60px;
+            height: 60px;
+            font-size: 30px;
+            line-height: 60px;
+        }
+
+        #barbers-section .barber-name {
+            font-size: 16px;
+        }
+
+        #barbers-section .barber-actions .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Ajustes no formulário de barbeiros */
+    #barberForm .btn-primary {
+        background-color: #DAA520;
+        border-color: #DAA520;
+    }
+
+    #barberForm .btn-primary:hover {
+        background-color: #c19b1a;
+        border-color: #c19b1a;
     }
 }
