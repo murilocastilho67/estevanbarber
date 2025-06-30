@@ -1,10 +1,17 @@
 import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup } from './utils.js';
 
+let isBarberFormInitialized = false;
+
 export async function initBarbers(db) {
     console.log('Inicializando gerenciamento de barbeiros');
     window.db = db;
     await loadBarbers(db);
+    const barberForm = document.getElementById('barberForm');
+    if (barberForm && !isBarberFormInitialized) {
+        barberForm.addEventListener('submit', (event) => addOrUpdateBarber(db, event));
+        isBarberFormInitialized = true; // Marca como inicializado
+    }
 }
 
 export async function loadBarbers(db) {
@@ -12,7 +19,7 @@ export async function loadBarbers(db) {
         if (!db) throw new Error('Firestore não inicializado');
         console.log('Carregando barbeiros...');
         const barbersList = document.getElementById('barbersList');
-        barbersList.innerHTML = '';
+        barbersList.innerHTML = ''; // Limpa a lista antes de recarregar
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         if (barbersSnapshot.empty) {
             barbersList.innerHTML = '<div class="col"><p class="text-center">Nenhum barbeiro encontrado.</p></div>';
@@ -97,6 +104,7 @@ export async function addOrUpdateBarber(db, event) {
             return;
         }
 
+        console.log('Salvando barbeiro - ID:', barberId, 'Nome:', name); // Depuração
         if (barberId) {
             // Atualização
             await setDoc(doc(db, 'barbers', barberId), { name }, { merge: true });

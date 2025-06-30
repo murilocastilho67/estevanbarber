@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estevan Barber - Painel do Gerente</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Adiciona as fontes Poppins e Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <!-- Adiciona o Font Awesome via CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- Adiciona o CSS do Bootstrap -->
@@ -136,50 +138,18 @@
     <div class="main-content" id="mainContent">
         <div id="barbers-section" class="section">
             <h2>Gerenciar Barbeiros</h2>
-            <form id="barberForm">
-                <input type="hidden" id="barberId" name="barberId">
-                <label for="barberName">Nome do Barbeiro:</label>
-                <input type="text" id="barberName" name="barberName" required="">
-                <button type="submit">Adicionar Barbeiro</button>
+            <form id="barberForm" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-8">
+                        <input type="hidden" id="barberId" name="barberId">
+                        <input type="text" id="barberName" name="barberName" class="form-control mb-2" placeholder="Nome do barbeiro" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">Adicionar Barbeiro</button>
+                    </div>
+                </div>
             </form>
-            <div id="barbersList">
-                <div class="barber-card">
-                    <div class="barber-info">
-                        <h4>Estevan</h4>
-                    </div>
-                    <div class="barber-actions">
-                        <button class="action-btn edit-barber" data-id="barber1748861790183">Editar</button>
-                        <button class="action-btn delete-barber" data-id="barber1748861790183">Excluir</button>
-                    </div>
-                </div>
-                <div class="barber-card">
-                    <div class="barber-info">
-                        <h4>Inã</h4>
-                    </div>
-                    <div class="barber-actions">
-                        <button class="action-btn edit-barber" data-id="barber1748861797732">Editar</button>
-                        <button class="action-btn delete-barber" data-id="barber1748861797732">Excluir</button>
-                    </div>
-                </div>
-                <div class="barber-card">
-                    <div class="barber-info">
-                        <h4>Estevan</h4>
-                    </div>
-                    <div class="barber-actions">
-                        <button class="action-btn edit-barber" data-id="barber1748861790183">Editar</button>
-                        <button class="action-btn delete-barber" data-id="barber1748861790183">Excluir</button>
-                    </div>
-                </div>
-                <div class="barber-card">
-                    <div class="barber-info">
-                        <h4>Inã</h4>
-                    </div>
-                    <div class="barber-actions">
-                        <button class="action-btn edit-barber" data-id="barber1748861797732">Editar</button>
-                        <button class="action-btn delete-barber" data-id="barber1748861797732">Excluir</button>
-                    </div>
-                </div>
-            </div>
+            <div id="barbersList" class="row row-cols-1 row-cols-md-2 g-3"></div>
         </div>
 
         <div id="appointments-section" class="section active">
@@ -203,22 +173,39 @@
 
         <div id="services-section" class="section">
             <h2>Gerenciar Serviços</h2>
-            <form id="serviceForm">
-                <input type="hidden" id="serviceId" name="serviceId">
-                <label for="serviceBarber">Barbeiro:</label>
-                <select id="serviceBarber" name="serviceBarber">
-                    <option value="barber1748861790183">Estevan</option>
-                    <option value="barber1748861797732">Inã</option>
-                </select>
-                <label for="serviceName">Nome do Serviço:</label>
-                <input type="text" id="serviceName" name="serviceName" required="">
-                <label for="servicePrice">Preço (R$):</label>
-                <input type="number" id="servicePrice" name="servicePrice" step="0.01" required="">
-                <label for="serviceDuration">Duração (min):</label>
-                <input type="number" id="serviceDuration" name="serviceDuration" required="">
-                <button type="submit">Adicionar/Editar Serviço</button>
+            <form id="serviceForm" class="mb-4">
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <input type="hidden" id="serviceId" name="serviceId">
+                        <label for="serviceBarber" class="form-label">Barbeiro:</label>
+                        <select id="serviceBarber" name="serviceBarber" class="form-select" required>
+                            <option value="">Selecione um barbeiro</option>
+                            <!-- Opções serão preenchidas dinamicamente -->
+                        </select>
+                        <div class="invalid-feedback">Selecione um barbeiro.</div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="serviceName" class="form-label">Nome do Serviço:</label>
+                        <input type="text" id="serviceName" name="serviceName" class="form-control" required>
+                        <div class="invalid-feedback">Nome é obrigatório.</div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="servicePrice" class="form-label">Preço (R$):</label>
+                        <input type="number" id="servicePrice" name="servicePrice" class="form-control" step="0.01" required>
+                        <div class="invalid-feedback">Preço deve ser maior que 0.</div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label for="serviceDuration" class="form-label">Duração (min):</label>
+                        <input type="number" id="serviceDuration" name="serviceDuration" class="form-control" required>
+                        <div class="invalid-feedback">Duração deve ser maior que 0.</div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Adicionar/Editar Serviço</button>
+                    </div>
+                </div>
             </form>
-            <div id="servicesList"></div>
+            <div class="separator">Serviços Cadastrados</div>
+            <div id="servicesList" class="services-list"></div>
         </div>
 
         <div id="schedules-section" class="section">
@@ -467,4 +454,4 @@
     </script>
     <iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" tabindex="-1" vspace="0" width="100%" aria-hidden="true" id="I0_1749520766699" name="I0_1749520766699" src="https://barbearia-estevan.firebaseapp.com/__/auth/iframe?apiKey=AIzaSyAoQo2EVxEypXMirJjfmgiujeR3ij0ZzNU&appName=%5BDEFAULT%5D&v=10.14.1&eid=p&usegapi=1&jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.pt_BR.Cg3X8WmgH3E.O%2Fd%3D1%2Frs%3DAHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw%2Fm%3D__features__#id=I0_1749520766699&_gfid=I0_1749520766699&parent=http%3A%2F%2F127.0.0.1%3A5500&pfname=&rpctoken=16509020" style="position: absolute; top: -100px; width: 1px; height: 1px;"></iframe><div id="dgwmh3ykva" style="display: block;"></div>
 </body>
-</html> 
+</html>
