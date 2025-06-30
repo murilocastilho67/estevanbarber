@@ -2,6 +2,7 @@ import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc } fro
 import { showPopup } from './utils.js';
 
 let isBarberFormInitialized = false;
+let displayedBarberIds = new Set(); // Para rastrear IDs já exibidos
 
 export async function initBarbers(db) {
     console.log('Inicializando gerenciamento de barbeiros');
@@ -17,9 +18,10 @@ export async function initBarbers(db) {
 export async function loadBarbers(db) {
     try {
         if (!db) throw new Error('Firestore não inicializado');
-        console.log('Carregando barbeiros...');
+        console.log('Iniciando loadBarbers');
         const barbersList = document.getElementById('barbersList');
         barbersList.innerHTML = ''; // Limpa a lista antes de recarregar
+        displayedBarberIds.clear(); // Limpa o Set antes de recarregar
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         if (barbersSnapshot.empty) {
             barbersList.innerHTML = '<div class="col"><p class="text-center">Nenhum barbeiro encontrado.</p></div>';
@@ -27,21 +29,24 @@ export async function loadBarbers(db) {
         }
         barbersSnapshot.forEach((docSnapshot) => {
             const barber = docSnapshot.data();
-            const card = document.createElement('div');
-            card.className = 'col';
-            card.innerHTML = `
-                <div class="card barber-card">
-                    <div class="card-body text-center">
-                        <div class="barber-photo">${barber.name.charAt(0)}</div>
-                        <h5 class="card-title barber-name">${barber.name}</h5>
-                        <div class="barber-actions">
-                            <button class="btn btn-outline-secondary btn-sm edit-btn" title="Editar" data-id="${barber.id}"><i class="fas fa-pen"></i></button>
-                            <button class="btn btn-outline-danger btn-sm delete-btn" title="Excluir" data-id="${barber.id}"><i class="fas fa-trash"></i></button>
+            if (!displayedBarberIds.has(docSnapshot.id)) { // Validação pra evitar duplicação
+                displayedBarberIds.add(docSnapshot.id); // Marca o ID como exibido
+                const card = document.createElement('div');
+                card.className = 'col';
+                card.innerHTML = `
+                    <div class="card barber-card">
+                        <div class="card-body text-center">
+                            <div class="barber-photo">${barber.name.charAt(0)}</div>
+                            <h5 class="card-title barber-name">${barber.name}</h5>
+                            <div class="barber-actions">
+                                <button class="btn btn-outline-secondary btn-sm edit-btn" title="Editar" data-id="${barber.id}"><i class="fas fa-pen"></i></button>
+                                <button class="btn btn-outline-danger btn-sm delete-btn" title="Excluir" data-id="${barber.id}"><i class="fas fa-trash"></i></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            barbersList.appendChild(card);
+                `;
+                barbersList.appendChild(card);
+            }
         });
 
         // Adicionar eventos aos botões

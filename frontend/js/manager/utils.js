@@ -37,6 +37,12 @@ function showPopup(message, isConfirm = false, onConfirm = null) {
 }
 
 function showSection(sectionId) {
+    console.log('Tentando mostrar seção:', sectionId); // Log pra rastrear
+    const currentActive = document.querySelector('.section.active');
+    if (currentActive && currentActive.id === sectionId) {
+        console.log('Seção já ativa, ignorando:', sectionId);
+        return; // Evita recarregar se já está ativa
+    }
     console.log('Mostrando seção:', sectionId);
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');

@@ -1,8 +1,8 @@
 import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { showPopup, showSection } from './utils.js';
-import { initBarbers, loadBarbers, addOrUpdateBarber } from './barbers.js';
+import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
-import { initServices, loadServices } from './services.js';
+import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js';
 import { initSchedules } from './schedules.js';
 import { initStock, loadStockMovements, loadStockProducts } from './stock.js';
 import { initCashFlow, loadCashFlowSummary } from './cashflow.js';
@@ -16,7 +16,8 @@ console.log('manager.js carregado - Versão: 2025-06-09');
 const auth = getAuth();
 console.log('Auth inicializado:', !!auth);
 let db = window.db;
-let isLoadingBarbers = false;
+let isInitialized = false;
+let isBarbersLoaded = false; // Flag pra controlar carga de barbeiros
 
 function waitForFirestore() {
     return new Promise((resolve, reject) => {
@@ -94,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const navLinks = document.querySelectorAll('#sidebar nav a');
         navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+            link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (link.classList.contains('has-subitems')) {
                     const subitemsId = link.id + '-subitems';
@@ -108,24 +109,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         icon.style.transition = 'transform 0.3s';
                         icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
                     }
-                } else if (link.id === 'nav-stock-movements') {
-                    showSection('stock-section');
-                    document.getElementById('stock-movements-section').style.display = 'block';
-                    document.getElementById('stock-products-section').style.display = 'none';
-                } else if (link.id === 'nav-stock-products') {
-                    showSection('stock-section');
-                    document.getElementById('stock-movements-section').style.display = 'none';
-                    document.getElementById('stock-products-section').style.display = 'block';
-                } else if (link.id === 'nav-cashflow-summary') {
-                    showSection('cashflow-section');
-                    document.getElementById('cashflow-summary-section').style.display = 'block';
-                    document.getElementById('cashflow-fixed-expense-section').style.display = 'none';
-                } else if (link.id === 'nav-cashflow-fixed-expense') {
-                    showSection('cashflow-section');
-                    document.getElementById('cashflow-summary-section').style.display = 'none';
-                    document.getElementById('cashflow-fixed-expense-section').style.display = 'block';
                 } else {
-                    showSection(link.id.replace('nav-', '') + '-section');
+                    const sectionId = link.id.replace('nav-', '') + '-section';
+                    showSection(sectionId);
+                    // Só carrega dados se a seção ainda não foi carregada
+                    if (sectionId === 'barbers-section' && !isBarbersLoaded) {
+                        await loadBarbers(db);
+                        isBarbersLoaded = true;
+                    } else if (sectionId === 'services-section') {
+                        await loadServices(db);
+                    } else if (sectionId === 'appointments-section') {
+                        await loadAppointments(db);
+                    } else if (sectionId === 'schedules-section') {
+                        await loadServiceBarbers(db); // Preenche o select de barbeiros
+                    }
                 }
                 if (!link.classList.contains('has-subitems')) {
                     sidebar.classList.remove('open');
@@ -147,61 +144,32 @@ auth.onAuthStateChanged((user) => {
         console.error('Auth não inicializado');
         return;
     }
-    if (isLoadingBarbers) {
-        console.log('loadBarbers já em andamento, ignorando chamada duplicada.');
-        return;
-    }
     if (!user) {
         console.error('Usuário não autenticado. Redirecionando para login...');
         window.location.href = 'index.html';
         return;
     }
     console.log('Usuário autenticado:', user.email);
-    isLoadingBarbers = true;
-    waitForFirestore().then((db) => {
-        window.db = db;
-        initBarbers(db);
-        initServices(db);
-        initAppointments(db);
-        initSchedules(db);
-        initStock(db);
-        initCashFlow(db);
-        initDashboard(db);
-        loadBarbers(db); // Chama uma vez
-        loadServices(db);
-        loadAppointments(db);
-        showSection('appointments-section');
-    }).catch(error => {
-        console.error('Erro ao esperar Firestore:', error);
-        showPopup('Erro ao inicializar o painel: ' + error.message);
-    }).finally(() => {
-        isLoadingBarbers = false;
-        console.log('loadBarbers finalizado');
-    });
-});
-
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM carregado, inicializando painel do gerente...');
-    try {
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        window.db = db;
-
-        initBarbers(db);
-        initServices(db);
-        initAppointments(db);
-        initSchedules(db);
-        initStock(db);
-        initCashFlow(db);
-        initDashboard(db);
-
-        loadBarbers(db); // Chama uma vez
-        loadServices(db);
-        loadAppointments(db);
-
-        showSection('appointments-section');
-    } catch (error) {
-        console.error('Erro ao inicializar o painel do gerente:', error);
-        showPopup('Erro ao inicializar o painel: ' + error.message);
+    if (!isInitialized) {
+        waitForFirestore().then((db) => {
+            window.db = db;
+            initBarbers(db);
+            initServices(db);
+            initAppointments(db);
+            initSchedules(db);
+            initStock(db);
+            initCashFlow(db);
+            initDashboard(db);
+            loadBarbers(db); // Chama uma vez após autenticação
+            loadServices(db);
+            loadAppointments(db);
+            loadServiceBarbers(db); // Preenche os selects de barbeiros
+            showSection('appointments-section');
+            isInitialized = true;
+            isBarbersLoaded = true; // Marca como carregado na inicialização
+        }).catch(error => {
+            console.error('Erro ao esperar Firestore:', error);
+            showPopup('Erro ao inicializar o painel: ' + error.message);
+        });
     }
 });

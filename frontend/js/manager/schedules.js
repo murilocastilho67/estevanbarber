@@ -1,46 +1,47 @@
-import { collection, getDocs, doc, deleteDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection, dayOfWeekPt, dayOfWeekEn } from './utils.js';
+
+let displayedScheduleIds = new Set(); // Para rastrear IDs já exibidos
 
 async function loadSchedules(db) {
     try {
         console.log('Carregando horários...');
         const schedulesList = document.getElementById('schedulesList');
         schedulesList.innerHTML = '';
+        displayedScheduleIds.clear(); // Limpa o Set antes de recarregar
         const schedulesSnapshot = await getDocs(collection(db, 'schedules'));
         if (schedulesSnapshot.empty) {
             schedulesList.innerHTML = '<p>Nenhum horário cadastrado.</p>';
             return;
         }
 
-        // Carrega todos os barbeiros pra mapear IDs pra nomes
-        const barbersSnapshot = await getDocs(collection(db, 'barbers'));
-        const barberMap = {};
-        barbersSnapshot.forEach((docSnapshot) => {
-            const barber = docSnapshot.data();
-            barberMap[barber.id] = barber.name;
-        });
-        console.log('Mapa de barbeiros:', barberMap);
-
-        schedulesSnapshot.forEach((docSnapshot) => {
+        for (const docSnapshot of schedulesSnapshot.docs) {
             const sched = docSnapshot.data();
-            const dayPt = dayOfWeekPt[sched.dayOfWeek] || sched.dayOfWeek;
-            const barberName = barberMap[sched.barberId] || sched.barberId;
-            const card = document.createElement('div');
-            card.className = 'schedule-card';
-            card.innerHTML = `
-                <div class="schedule-info">
-                    <h4>${dayPt} (Barbeiro ${barberName})</h4>
-                    <p>Início: ${sched.startTime}</p>
-                    <p>Fim: ${sched.endTime}</p>
-                    <p>Pausa: ${sched.breakStart ? `${sched.breakStart}-${sched.breakEnd}` : 'Nenhuma'}</p>
-                </div>
-                <div class="schedule-actions">
-                    <button class="action-btn edit-schedule" onclick="window.editSchedule('${docSnapshot.id}', '${sched.dayOfWeek}', '${sched.barberId}', '${sched.startTime}', '${sched.endTime}', '${sched.breakStart || ''}', '${sched.breakEnd || ''}')">Editar</button>
-                    <button class="action-btn delete-schedule" data-id="${docSnapshot.id}">Excluir</button>
-                </div>
-            `;
-            schedulesList.appendChild(card);
-        });
+            if (!displayedScheduleIds.has(docSnapshot.id)) { // Validação pra evitar duplicação
+                displayedScheduleIds.add(docSnapshot.id); // Marca o ID como exibido
+                const dayPt = dayOfWeekPt[sched.dayOfWeek] || sched.dayOfWeek;
+                const barberDoc = await getDoc(doc(db, 'barbers', sched.barberId));
+                const barberName = barberDoc.exists() ? barberDoc.data().name : sched.barberId;
+                const card = document.createElement('div');
+                card.className = 'schedule-card';
+                card.innerHTML = `
+                    <div class="schedule-header">
+                        <i class="fas fa-calendar-day"></i> ${dayPt} — <strong>${barberName}</strong>
+                    </div>
+                    <div class="schedule-time">
+                        <i class="fas fa-clock"></i> ${sched.startTime} - ${sched.endTime}
+                    </div>
+                    <div class="schedule-break">
+                        <i class="fas fa-pause-circle"></i> Pausa: ${sched.breakStart ? `${sched.breakStart} - ${sched.breakEnd}` : '—'}
+                    </div>
+                    <div class="card-actions">
+                        <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn" title="Excluir"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                schedulesList.appendChild(card);
+            }
+        }
 
         // Adiciona eventos aos botões de excluir
         document.querySelectorAll('.delete-schedule').forEach(btn => {
@@ -59,6 +60,20 @@ async function loadSchedules(db) {
                 }
             });
         });
+
+        // Adiciona eventos aos botões de editar (precisa ser ajustado pra nova estrutura)
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const card = btn.closest('.schedule-card');
+                const dayOfWeek = card.querySelector('.schedule-header').textContent.split(' — ')[0].replace('<i class="fas fa-calendar-day"></i> ', '');
+                const barberId = Object.keys(dayOfWeekEn).find(key => dayOfWeekEn[key] === dayOfWeek) || dayOfWeek;
+                const startTime = card.querySelector('.schedule-time').textContent.split(' - ')[0].replace('<i class="fas fa-clock"></i> ', '');
+                const endTime = card.querySelector('.schedule-time').textContent.split(' - ')[1];
+                const breakStart = card.querySelector('.schedule-break').textContent.includes('-') ? card.querySelector('.schedule-break').textContent.split(' - ')[1].split(' ')[0] : '';
+                const breakEnd = card.querySelector('.schedule-break').textContent.includes('-') ? card.querySelector('.schedule-break').textContent.split(' - ')[2] : '';
+                window.editSchedule(card.dataset.id, dayOfWeek, barberId, startTime, endTime, breakStart, breakEnd);
+            });
+        });
     } catch (error) {
         console.error('Erro ao carregar horários:', error);
         showPopup('Erro ao carregar horários: ' + error.message);
@@ -67,18 +82,18 @@ async function loadSchedules(db) {
 
 async function setupSchedules(db) {
     const schedules = [
-        { id: 'sched1_b1', barberId: 'barber1', dayOfWeek: 'Monday', startTime: '14:00', endTime: '21:00', breakStart: null, breakEnd: null },
-        { id: 'sched2_b1', barberId: 'barber1', dayOfWeek: 'Tuesday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
-        { id: 'sched3_b1', barberId: 'barber1', dayOfWeek: 'Wednesday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
-        { id: 'sched4_b1', barberId: 'barber1', dayOfWeek: 'Thursday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
-        { id: 'sched5_b1', barberId: 'barber1', dayOfWeek: 'Friday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
-        { id: 'sched6_b1', barberId: 'barber1', dayOfWeek: 'Saturday', startTime: '08:00', endTime: '17:00', breakStart: null, breakEnd: null },
-        { id: 'sched1_b2', barberId: 'barber2', dayOfWeek: 'Monday', startTime: '15:00', endTime: '20:00', breakStart: null, breakEnd: null },
-        { id: 'sched2_b2', barberId: 'barber2', dayOfWeek: 'Tuesday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
-        { id: 'sched3_b2', barberId: 'barber2', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
-        { id: 'sched4_b2', barberId: 'barber2', dayOfWeek: 'Thursday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
-        { id: 'sched5_b2', barberId: 'barber2', dayOfWeek: 'Friday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
-        { id: 'sched6_b2', barberId: 'barber2', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '16:00', breakStart: null, breakEnd: null }
+        { id: 'sched1_b1', barberId: 'barber1751245788149', dayOfWeek: 'Monday', startTime: '14:00', endTime: '21:00', breakStart: null, breakEnd: null },
+        { id: 'sched2_b1', barberId: 'barber1751245788149', dayOfWeek: 'Tuesday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
+        { id: 'sched3_b1', barberId: 'barber1751245788149', dayOfWeek: 'Wednesday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
+        { id: 'sched4_b1', barberId: 'barber1751245788149', dayOfWeek: 'Thursday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
+        { id: 'sched5_b1', barberId: 'barber1751245788149', dayOfWeek: 'Friday', startTime: '09:00', endTime: '21:00', breakStart: '12:00', breakEnd: '14:00' },
+        { id: 'sched6_b1', barberId: 'barber1751245788149', dayOfWeek: 'Saturday', startTime: '08:00', endTime: '17:00', breakStart: null, breakEnd: null },
+        { id: 'sched1_b2', barberId: 'barber1751245793912', dayOfWeek: 'Monday', startTime: '15:00', endTime: '20:00', breakStart: null, breakEnd: null },
+        { id: 'sched2_b2', barberId: 'barber1751245793912', dayOfWeek: 'Tuesday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
+        { id: 'sched3_b2', barberId: 'barber1751245793912', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
+        { id: 'sched4_b2', barberId: 'barber1751245793912', dayOfWeek: 'Thursday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
+        { id: 'sched5_b2', barberId: 'barber1751245793912', dayOfWeek: 'Friday', startTime: '10:00', endTime: '18:00', breakStart: '13:00', breakEnd: '14:00' },
+        { id: 'sched6_b2', barberId: 'barber1751245793912', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '16:00', breakStart: null, breakEnd: null }
     ];
 
     try {

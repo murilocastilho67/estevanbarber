@@ -2,6 +2,7 @@ import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from 'https://www
 import { showPopup, showSection } from './utils.js';
 
 let isServiceFormInitialized = false;
+let displayedServiceIds = new Set(); // Para rastrear IDs já exibidos
 
 export async function initServices(db) {
     console.log('Inicializando eventos de serviços...');
@@ -15,10 +16,18 @@ export async function initServices(db) {
     document.getElementById('servicesList').addEventListener('click', handleServiceActions);
 }
 
-async function loadBarbersForSelect(db) {
-    const barberSelect = document.getElementById('serviceBarber');
-    if (!barberSelect) return;
-    barberSelect.innerHTML = '<option value="">Selecione um barbeiro</option>';
+export async function loadBarbersForSelect(db) { // Exportada explicitamente
+    console.log('Carregando barbeiros para selects...'); // Log de depuração
+    const selects = [
+        document.getElementById('serviceBarber'),
+        document.getElementById('scheduleBarber'),
+        document.getElementById('barberFilter')
+    ];
+    selects.forEach(select => {
+        if (select) {
+            select.innerHTML = '<option value="">Selecione um barbeiro</option>';
+        }
+    });
     try {
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         if (barbersSnapshot.empty) {
@@ -26,10 +35,14 @@ async function loadBarbersForSelect(db) {
         } else {
             barbersSnapshot.forEach(doc => {
                 const barber = doc.data();
-                const option = document.createElement('option');
-                option.value = barber.id;
-                option.textContent = barber.name;
-                barberSelect.appendChild(option);
+                selects.forEach(select => {
+                    if (select) {
+                        const option = document.createElement('option');
+                        option.value = barber.id;
+                        option.textContent = barber.name;
+                        select.appendChild(option);
+                    }
+                });
             });
             console.log('Select de barbeiros preenchido com:', barbersSnapshot.docs.map(doc => doc.data().name));
         }
@@ -43,6 +56,7 @@ export async function loadServices(db) {
         console.log('Carregando serviços...');
         const servicesList = document.getElementById('servicesList');
         servicesList.innerHTML = ''; // Limpa a lista antes de recarregar
+        displayedServiceIds.clear(); // Limpa o Set antes de recarregar
         const servicesSnapshot = await getDocs(collection(db, 'services'));
         if (servicesSnapshot.empty) {
             servicesList.innerHTML = '<p class="text-center">Nenhum serviço encontrado.</p>';
@@ -55,21 +69,24 @@ export async function loadServices(db) {
             const barberDoc = await getDoc(doc(db, 'barbers', service.barberId));
             const barberName = barberDoc.exists() ? barberDoc.data().name : 'Desconhecido';
             const icon = '✂️'; // [PRINT] Fixa a tesoura como ícone padrão pra todos os serviços
-            const card = document.createElement('div');
-            card.className = 'service-card';
-            card.setAttribute('data-id', docSnapshot.id);
-            card.innerHTML = `
-                <div class="service-info">
-                    <h4>${icon} ${service.name}</h4> <!-- [PRINT] Tesoura aparece aqui pra todos os serviços -->
-                    <p>Barbeiro: ${barberName}</p>
-                    <p><strong>💵 R$ ${service.price.toFixed(2)}</strong> • ⏱️ ${service.duration} min</p>
-                </div>
-                <div class="service-actions">
-                    <button class="btn btn-outline-secondary btn-sm edit-service" title="Editar serviço"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-outline-danger btn-sm delete-service" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
-                </div>
-            `;
-            servicesList.appendChild(card);
+            if (!displayedServiceIds.has(docSnapshot.id)) { // Validação pra evitar duplicação
+                displayedServiceIds.add(docSnapshot.id); // Marca o ID como exibido
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                card.setAttribute('data-id', docSnapshot.id);
+                card.innerHTML = `
+                    <div class="service-info">
+                        <h4>${icon} ${service.name}</h4> <!-- [PRINT] Tesoura aparece aqui pra todos os serviços -->
+                        <p>Barbeiro: ${barberName}</p>
+                        <p><strong>💵 R$ ${service.price.toFixed(2)}</strong> • ⏱️ ${service.duration} min</p>
+                    </div>
+                    <div class="service-actions">
+                        <button class="btn btn-outline-secondary btn-sm edit-service" title="Editar serviço"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-outline-danger btn-sm delete-service" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                servicesList.appendChild(card);
+            }
         }
     } catch (error) {
         console.error('Erro ao carregar serviços ou coleção não encontrada:', error);
