@@ -1,4 +1,6 @@
-/* base.css - Estilos básicos */
+/* ==========================================================================
+   1. Reset e Variáveis Globais
+   ========================================================================== */
 * {
     margin: 0;
     padding: 0;
@@ -6,6 +8,25 @@
     font-family: sans-serif;
 }
 
+:root {
+    --primary-color: #4b2e1e;
+    --secondary-color: #6b4e31;
+    --border-color: #e0e0e0;
+    --card-bg: #ffffff;
+    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 2px 6px rgba(0, 0, 0, 0.1);
+    --padding-sm: 0.5rem;
+    --padding-md: 1rem;
+    --padding-lg: 1.5rem;
+    --border-radius-sm: 5px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 10px;
+    --transition: 0.3s ease-in-out;
+}
+
+/* ==========================================================================
+   2. Layout Geral
+   ========================================================================== */
 body {
     background-color: #f5f5f5;
     min-height: 100vh;
@@ -24,17 +45,17 @@ body.manager-layout {
 }
 
 h1, h2, h3 {
-    color: #4b2e1e;
-    margin: 1.5rem 0 1rem;
+    color: var(--primary-color);
+    margin: var(--padding-lg) 0 var(--padding-md);
 }
 
 p {
-    margin: 0.5rem 0;
-    color: #4b2e1e;
+    margin: var(--padding-sm) 0;
+    color: var(--primary-color);
 }
 
 a {
-    color: #4b2e1e;
+    color: var(--primary-color);
     font-weight: bold;
     text-decoration: none;
 }
@@ -43,20 +64,20 @@ a:hover {
     text-decoration: underline;
 }
 
-/* layout.css - Estrutura geral */
+/* Header e Sidebar */
 .top-header {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    background-color: #4b2e1e;
+    background-color: var(--primary-color);
     color: #fff;
-    padding: 0.5rem 1rem;
+    padding: var(--padding-sm) var(--padding-md);
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1002;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-light);
 }
 
 .header-title {
@@ -72,7 +93,7 @@ a:hover {
     font-size: 1.5rem;
     color: #fff;
     cursor: pointer;
-    transition: color 0.3s;
+    transition: color var(--transition);
 }
 
 .menu-toggle:hover, .logout-btn:hover {
@@ -81,15 +102,15 @@ a:hover {
 
 .sidebar {
     width: 250px;
-    background-color: #4b2e1e;
+    background-color: var(--primary-color);
     color: #fff;
-    padding: 1rem;
+    padding: var(--padding-md);
     position: fixed;
     height: 100%;
     top: 0;
     left: 0;
     transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
+    transition: transform var(--transition);
     z-index: 1000;
     overflow-y: auto;
 }
@@ -107,7 +128,7 @@ a:hover {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
-    transition: opacity 0.3s ease-in-out;
+    transition: opacity var(--transition);
     opacity: 0;
 }
 
@@ -120,7 +141,7 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
 }
 
 .menu-close {
@@ -129,7 +150,7 @@ a:hover {
     font-size: 1.5rem;
     color: #fff;
     cursor: pointer;
-    transition: color 0.3s;
+    transition: color var(--transition);
 }
 
 .menu-close:hover {
@@ -144,7 +165,7 @@ a:hover {
 
 .sidebar h2 {
     color: #fff;
-    margin-bottom: 2rem;
+    margin-bottom: var(--padding-lg);
     text-align: center;
 }
 
@@ -156,13 +177,13 @@ a:hover {
 .sidebar a {
     color: #fff;
     text-decoration: none;
-    padding: 1rem;
-    margin: 0.5rem 0;
-    border-radius: 5px;
-    transition: background-color 0.3s;
+    padding: var(--padding-md);
+    margin: var(--padding-sm) 0;
+    border-radius: var(--border-radius-sm);
+    transition: background-color var(--transition);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--padding-sm);
     position: relative;
 }
 
@@ -171,97 +192,237 @@ a:hover {
 }
 
 .sidebar a:hover {
-    background-color: #6b4e31;
+    background-color: var(--secondary-color);
 }
 
 .sidebar a.active {
-    background-color: #6b4e31;
+    background-color: var(--secondary-color);
     font-weight: bold;
 }
 
 .subitems {
-    padding-left: 1rem;
+    padding-left: var(--padding-md);
 }
 
 .subitems .nav-subitem {
-    padding: 0.5rem 1rem;
+    padding: var(--padding-sm) var(--padding-md);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--padding-sm);
 }
 
 .subitems .nav-subitem:hover {
-    background-color: #6b4e31;
+    background-color: var(--secondary-color);
 }
 
 .main-content {
-    padding: 2rem;
+    padding: var(--padding-lg);
     flex-grow: 1;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
     margin: 0;
     margin-top: 60px;
-    transition: padding-left 0.3s ease-in-out;
+    transition: padding-left var(--transition);
 }
 
 .container {
     text-align: center;
-    background-color: #fff;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-bg);
+    padding: var(--padding-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
     max-width: 800px;
     width: 100%;
-    margin: 2rem auto;
+    margin: var(--padding-lg) auto;
 }
 
 .container .logo {
     display: block;
     max-width: 150px;
-    margin: 0 auto 1rem;
+    margin: 0 auto var(--padding-md);
 }
 
 .form-container {
-    margin-top: 1rem;
+    margin-top: var(--padding-md);
 }
 
-.section {
-    display: none;
+/* ==========================================================================
+   3. Componentes Reutilizáveis
+   ========================================================================== */
+/* Estilo base para todos os cards do sistema */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-light);
+    padding: var(--padding-md); /* Espaçamento interno padrão */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform var(--transition);
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.section.active {
-    display: block;
+.card:hover {
+    transform: translateY(-2px);
 }
 
-.subsection {
-    display: none;
+/* Conteúdo interno do card */
+.card .card-info {
+    flex-grow: 1;
+    padding: var(--padding-sm); /* Espaçamento interno pro texto */
 }
 
-.subsection.active {
-    display: block;
+.card .card-info h4 {
+    margin: 0 0 var(--padding-sm);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* components.css - Estilos de componentes */
+.card .card-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+}
+
+/* Ações do card (botões) */
+.card-actions {
+    display: flex; /* Garante layout horizontal */
+    gap: var(--padding-sm); /* Espaçamento entre botões */
+    align-items: center; /* Alinha verticalmente no centro */
+}
+
+.card-actions .action-btn {
+    padding: var(--padding-sm) var(--padding-md); /* Padding vertical e horizontal */
+    font-size: 0.9rem;
+    border-radius: var(--border-radius-sm);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--padding-sm); /* Espaço entre ícone e texto, se houver */
+    transition: background-color var(--transition), transform var(--transition);
+    min-width: 0; /* Evita que botões fiquem muito largos */
+}
+
+.card-actions .action-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Estilos específicos para tipos de botões */
+.card-actions .btn-edit {
+    background-color: #DAA520;
+    color: #fff;
+}
+
+.card-actions .btn-edit:hover {
+    background-color: #c19b1a;
+}
+
+.card-actions .btn-delete {
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.card-actions .btn-delete:hover {
+    background-color: #c9302c;
+}
+
+.card-actions .btn-cancel {
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.card-actions .btn-cancel:hover {
+    background-color: #c9302c;
+}
+
+.card-actions .btn-completed {
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+.card-actions .btn-completed:hover {
+    background-color: #4cae4c;
+}
+
+.card-actions .btn-no-show {
+    background-color: #f0ad4e;
+    color: #fff;
+}
+
+.card-actions .btn-no-show:hover {
+    background-color: #ec971f;
+}
+
+.card-actions .btn-feedback {
+    background-color: #5bc0de;
+    color: #fff;
+}
+
+.card-actions .btn-feedback:hover {
+    background-color: #46b8da;
+}
+
+.card-actions .btn-reminder {
+    background-color: #25d366;
+    color: #fff;
+}
+
+.card-actions .btn-reminder:hover:not(:disabled) {
+    background-color: #1ebe57;
+}
+
+.card-actions .btn-reminder:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.card-actions .btn-stock-entry {
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+.card-actions .btn-stock-entry:hover {
+    background-color: #4cae4c;
+}
+
+.card-actions .btn-stock-exit {
+    background-color: #f0ad4e;
+    color: #fff;
+}
+
+.card-actions .btn-stock-exit:hover {
+    background-color: #ec971f;
+}
+
 label {
     display: block;
-    color: #4b2e1e;
-    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+    margin-bottom: var(--padding-sm);
     text-align: left;
 }
 
 input, select, textarea {
     width: 100%;
     padding: 0.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: var(--border-radius-sm);
     font-size: 1rem;
-    transition: border-color 0.3s;
+    transition: border-color var(--transition);
 }
 
 input:focus, select:focus, textarea:focus {
-    border-color: #4b2e1e;
+    border-color: var(--primary-color);
     outline: none;
 }
 
@@ -272,14 +433,14 @@ textarea {
 button {
     width: 100%;
     padding: 0.8rem;
-    background-color: #4b2e1e;
+    background-color: var(--primary-color);
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius-sm);
     font-size: 1rem;
     cursor: pointer;
-    margin: 0.5rem 0;
-    transition: background-color 0.3s;
+    margin: var(--padding-sm) 0;
+    transition: background-color var(--transition);
 }
 
 button:disabled {
@@ -288,58 +449,35 @@ button:disabled {
 }
 
 button:hover:not(:disabled) {
-    background-color: #6b4e31;
+    background-color: var(--secondary-color);
 }
 
-.summary {
-    margin: 1rem 0;
+summary {
+    margin: var(--padding-md) 0;
     text-align: left;
 }
 
-#servicesList, #appointmentsList, #barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
+.card-list {
     text-align: left;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
 }
 
-#servicesList {
-    padding-left: 0;
-    margin: 0 auto;
-    width: fit-content;
-    text-align: left;
-}
-
-#servicesList li {
+.card-list li {
     list-style-type: none;
-    margin: 0.5rem 0;
-    color: #4b2e1e;
+    margin: var(--padding-sm) 0;
+    color: var(--primary-color);
     font-size: 1rem;
-}
-
-#barbersList div, #schedulesList div, #stockList div, #stockMovementsList div, #cashflowList div {
-    margin: 0;
-    padding: 0.5rem 0;
-}
-
-#servicesList div:last-child, #barbersList div:last-child, #schedulesList div:last-child, #stockList div:last-child, #stockMovementsList div:last-child, #cashflowList div:last-child {
-    border-bottom: none;
-}
-
-#timeSlots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    justify-content: flex-start;
 }
 
 .time-slot {
     flex: 0 0 calc(33.33% - 0.2rem);
-    padding: 0.5rem;
+    padding: var(--padding-sm);
     background-color: #f5f5f5;
-    border: 2px solid #4b2e1e;
-    border-radius: 5px;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-sm);
     cursor: pointer;
     font-size: 0.9rem;
-    color: #4b2e1e;
+    color: var(--primary-color);
     text-align: center;
     box-sizing: border-box;
 }
@@ -349,28 +487,28 @@ button:hover:not(:disabled) {
 }
 
 .time-slot.selected {
-    background-color: #4b2e1e;
+    background-color: var(--primary-color);
     color: #fff;
-    border-color: #4b2e1e;
+    border-color: var(--primary-color);
 }
 
 .nav-buttons {
     display: flex;
-    gap: 1rem;
+    gap: var(--padding-md);
     justify-content: center;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
 }
 
 .nav-buttons button {
     width: auto;
-    padding: 0.5rem 1rem;
+    padding: var(--padding-sm) var(--padding-md);
 }
 
 .filter {
     display: flex;
-    gap: 1rem;
+    gap: var(--padding-md);
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
 }
 
 .filter label, .filter input, .filter select {
@@ -380,25 +518,19 @@ button:hover:not(:disabled) {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
 }
 
 th, td {
     border: 1px solid #ccc;
-    padding: 0.5rem;
+    padding: var(--padding-sm);
     text-align: left;
     word-break: break-word;
 }
 
 th {
-    background-color: #4b2e1e;
+    background-color: var(--primary-color);
     color: #fff;
-}
-
-.action-btn {
-    width: auto;
-    padding: 0.5rem 1rem;
-    margin: 0 0.25rem;
 }
 
 .password-container {
@@ -417,47 +549,128 @@ th {
 .error-message {
     color: red;
     font-size: 0.9rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--padding-md);
     display: none;
 }
 
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup {
+    background: #fff;
+    color: var(--primary-color);
+    padding: var(--padding-md);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 400px;
+    width: 80%;
+    border: 2px solid var(--primary-color);
+}
+
+.popup h3 {
+    margin: 0 0 var(--padding-sm);
+    color: var(--primary-color);
+    font-size: 1.5em;
+}
+
+.popup p {
+    margin: 0 0 var(--padding-lg);
+    font-size: 1em;
+    color: var(--primary-color);
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--padding-sm);
+}
+
+.popup-button {
+    padding: var(--padding-sm) var(--padding-md);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 1em;
+    transition: background var(--transition);
+}
+
+.popup-button.confirm {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.popup-button.confirm:hover {
+    background: var(--secondary-color);
+}
+
+.popup-button.cancel {
+    background: #d9534f;
+    color: #fff;
+}
+
+.popup-button.cancel:hover {
+    background: #c9302c;
+}
+
+/* ==========================================================================
+   4. Seções Específicas
+   ========================================================================== */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.subsection {
+    display: none;
+}
+
+.subsection.active {
+    display: block;
+}
+
 #appointmentsSection {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: var(--padding-lg);
+    padding: var(--padding-lg);
+    background: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
 }
 
-#appointmentsTable {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-/* Estilos para services.html */
 .appointment-form {
-    padding: 1.5rem;
-    margin: 1rem auto;
+    padding: var(--padding-lg);
+    margin: var(--padding-md) auto;
     max-width: 800px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
 }
 
 .services-container {
-    margin: 1rem 0;
-    padding: 0.5rem 1rem;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
+    margin: var(--padding-md) 0;
+    padding: var(--padding-sm) var(--padding-md);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
     width: 100%;
 }
 
 .services-container h3 {
-    color: #4b2e1e;
-    margin: 0 0 0.5rem;
+    color: var(--primary-color);
+    margin: 0 0 var(--padding-sm);
     font-size: 1.1rem;
     font-weight: 500;
 }
@@ -466,7 +679,7 @@ th {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 0;
+    padding: var(--padding-md) 0;
     border-bottom: 1px solid #ccc;
     width: 100%;
 }
@@ -486,624 +699,116 @@ th {
 
 .service-item input[type="checkbox"] {
     margin: 0;
-    accent-color: #4b2e1e;
+    accent-color: var(--primary-color);
     transform: scale(1.2);
 }
 
 #calendar {
     display: none;
-    margin: 1rem 0;
+    margin: var(--padding-md) 0;
 }
 
 .totals {
-    margin-top: 0.8rem;
-    padding-top: 0.8rem;
-    border-top: 2px solid #4b2e1e;
+    margin-top: var(--padding-sm);
+    padding-top: var(--padding-sm);
+    border-top: 2px solid var(--primary-color);
     text-align: right;
 }
 
 .totals p {
     margin: 0.3rem 0;
     font-size: 1.1rem;
-    color: #4b2e1e;
+    color: var(--primary-color);
 }
 
 .totals span {
     font-weight: bold;
-    color: #4b2e1e;
+    color: var(--primary-color);
 }
 
-/* Estilos para formulários de cadastro no manager.html */
-form#barberForm, form#serviceForm, form#scheduleForm, form#stockForm, form#fixedExpenseForm {
-    background: #fafafa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1.5rem;
-    border-left: 4px solid #4b2e1e;
-}
-
-form#barberForm label, form#serviceForm label, form#scheduleForm label, form#stockForm label, form#fixedExpenseForm label {
-    font-weight: 600;
-    color: #4b2e1e;
-}
-
-form#barberForm input, form#serviceForm input, form#scheduleForm input, form#stockForm input, form#fixedExpenseForm input,
-form#barberForm select, form#serviceForm select, form#scheduleForm select, form#stockForm select, form#fixedExpenseForm select {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-form#barberForm button, form#serviceForm button, form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
-    background: #4b2e1e;
-    color: #fff;
-    font-weight: 600;
-    transition: background-color 0.3s, transform 0.1s;
-}
-
-form#barberForm button:hover, form#serviceForm button:hover, form#scheduleForm button:hover, form#stockForm button:hover, form#fixedExpenseForm button:hover {
-    background: #6b4e31;
-    transform: scale(1.02);
-}
-
-form#scheduleForm, form#stockForm, form#fixedExpenseForm {
+#barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--padding-md);
+    margin-top: var(--padding-md);
 }
 
-form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
-    grid-column: span 2;
-}
-
-/* Estilo para cards de serviços */
-#servicesList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.service-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform 0.2s;
-    width: 100%;
-}
-
-.service-card:hover {
-    transform: translateY(-2px);
-}
-
-.service-card .service-info {
-    flex-grow: 1;
-}
-
-.service-card .service-info h4 {
-    margin: 0 0 0.5rem;
-    color: #4b2e1e;
-    font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.service-card .service-info p {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-}
-
-.service-card .service-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.service-card .action-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-.service-card .action-btn.edit-service {
-    background: #4b2e1e;
-    color: #fff;
-}
-
-.service-card .action-btn.edit-service:hover {
-    background: #6b4e31;
-}
-
-.service-card .action-btn.delete-service {
-    background: #d9534f;
-    color: #fff;
-}
-
-.service-card .action-btn.delete-service:hover {
-    background: #c9302c;
-}
-
-/* Estilo para cards de barbeiros */
-#barbersList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.barber-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform 0.2s;
-}
-
-.barber-card:hover {
-    transform: translateY(-2px);
-}
-
-.barber-card .barber-info h4 {
-    margin: 0 0 0.5rem;
-    color: #4b2e1e;
-    font-size: 1.1rem;
-}
-
-.barber-card .barber-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.barber-card .action-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-.barber-card .action-btn.edit-barber {
-    background: #4b2e1e;
-    color: #fff;
-}
-
-.barber-card .action-btn.edit-barber:hover {
-    background: #6b4e31;
-}
-
-.barber-card .action-btn.delete-barber {
-    background: #d9534f;
-    color: #fff;
-}
-
-.barber-card .action-btn.delete-barber:hover {
-    background: #c9302c;
-}
-
-/* Estilo para cards de agendamentos */
 #appointmentsList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--padding-md);
+    margin-top: var(--padding-md);
 }
 
-.appointment-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
-}
-
-.appointment-card:hover {
-    transform: translateY(-2px);
-}
-
-.appointment-card p {
-    margin: 0.3rem 0;
-    font-size: 0.9rem;
-    color: #4b2e1e;
-}
-
-.appointment-card .appointment-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.appointment-card .action-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-.appointment-card .action-btn.cancel {
-    background: #d9534f;
-    color: #fff;
-}
-
-.appointment-card .action-btn.cancel:hover {
-    background: #c9302c;
-}
-
-.appointment-card .action-btn.completed {
-    background: #5cb85c;
-    color: #fff;
-}
-
-.appointment-card .action-btn.completed:hover {
-    background: #4cae4c;
-}
-
-.appointment-card .action-btn.no-show {
-    background: #f0ad4e;
-    color: #fff;
-}
-
-.appointment-card .action-btn.no-show:hover {
-    background: #ec971f;
-}
-
-.appointment-card .action-btn.feedback-btn {
-    background: #5bc0de;
-    color: #fff;
-}
-
-.appointment-card .action-btn.feedback-btn:hover {
-    background: #46b8da;
-}
-
-.appointment-card .action-btn.send-reminder {
-    background: #25d366; /* Cor do WhatsApp */
-    color: #fff;
-}
-
-.appointment-card .action-btn.send-reminder:hover:not(:disabled) {
-    background: #1ebe57;
-}
-
-.appointment-card .action-btn.send-reminder:disabled {
-    background: #ccc;
-    color: #666;
-    cursor: not-allowed;
-}
-
-/* Estilo para cards de horários */
-#schedulesList {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.schedule-card {
-    background: #fff8f2;
-    border-radius: 10px;
-    padding: 1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.schedule-header,
-.schedule-time,
-.schedule-break {
-    font-size: 0.95rem;
-    margin: 0.25rem 0;
-    color: #4b2e1e;
-}
-
-.schedule-header {
-    font-weight: 600;
-}
-
-.schedule-header strong {
-    color: #4b2e1e;
-}
-
-.schedule-break {
-    color: #666;
-}
-
-.schedule-break i {
-    margin-right: 0.25rem;
-}
-
-.schedule-break:empty::after {
-    content: "—";
-    color: #666;
-}
-
-.card-actions {
-    margin-top: 0.5rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.edit-btn,
-.delete-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    color: #4b2e1e;
-    transition: transform 0.2s;
-}
-
-.delete-btn {
-    color: #d9534f;
-}
-
-.edit-btn:hover,
-.delete-btn:hover {
-    transform: scale(1.1);
-}
-
-.schedule-form-container {
-    margin: 1rem 0;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.schedule-form-container h3 {
-    color: #4b2e1e;
-    margin-bottom: 1rem;
-}
-
-.form-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.form-group {
-    flex: 1;
-}
-
-.form-group label {
-    display: block;
-    color: #4b2e1e;
-    margin-bottom: 0.25rem;
-}
-
-.form-group select,
-.form-group input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Estilo para cards de estoque */
-#stockList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-}
-
-.stock-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform 0.2s;
-    width: 100%;
-}
-
-.stock-card:hover {
-    transform: translateY(-2px);
-}
-
-.stock-card .stock-info {
-    flex-grow: 1;
-}
-
-.stock-card .stock-info h4 {
-    margin: 0 0 0.5rem;
-    color: #4b2e1e;
-    font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.stock-card .stock-info p {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-}
-
-.stock-card .stock-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.stock-card .action-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-.stock-card .action-btn.edit-stock {
-    background: #4b2e1e;
-    color: #fff;
-}
-
-.stock-card .action-btn.edit-stock:hover {
-    background: #6b4e31;
-}
-
-.stock-card .action-btn.delete-stock {
-    background: #d9534f;
-    color: #fff;
-}
-
-.stock-card .action-btn.delete-stock:hover {
-    background: #c9302c;
-}
-
-.stock-card .action-btn.stock-entry {
-    background: #5cb85c;
-    color: #fff;
-}
-
-.stock-card .action-btn.stock-entry:hover {
-    background: #4cae4c;
-}
-
-.stock-card .action-btn.stock-exit {
-    background: #f0ad4e;
-    color: #fff;
-}
-
-.stock-card .action-btn.stock-exit:hover {
-    background: #ec971f;
-}
-
-/* Estilo para cards de movimentações de estoque */
-#stockMovementsList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-}
-
-.movement-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
-    width: 100%;
-}
-
-.movement-card:hover {
-    transform: translateY(-2px);
-}
-
-.movement-card p {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-}
-
-/* Estilo para resumo financeiro */
-.summary-cards {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.summary-card {
-    background-color: #4b2e1e;
-    color: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-    flex: 1;
+.separator {
     text-align: center;
-    min-width: 150px;
+    margin: var(--padding-lg) 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    position: relative;
 }
 
-.filters {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.filters label, .filters select, .filters input {
-    width: auto;
-}
-
-/* Estilos do pop-up personalizado */
-.popup-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
+.separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
     left: 0;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
+    height: 1px;
+    background: var(--border-color);
+    z-index: -1;
 }
 
-.popup {
-    background: #fff;
-    color: #4b2e1e;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 400px;
-    width: 80%;
-    border: 2px solid #4b2e1e;
+.separator span {
+    background: var(--card-bg);
+    padding: 0 var(--padding-md);
 }
 
-.popup h3 {
-    margin: 0 0 10px;
-    color: #4b2e1e;
-    font-size: 1.5em;
+#barbers-section .barber-photo {
+    font-size: 40px;
+    color: #8B4513;
+    background: #f0f0f0;
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    border-radius: 50%;
+    margin: 0 auto var(--padding-sm);
 }
 
-.popup p {
-    margin: 0 0 20px;
-    font-size: 1em;
-    color: #4b2e1e;
+#barbers-section .barber-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #8B4513;
+    margin-bottom: var(--padding-sm);
 }
 
-.popup-buttons {
+#barbers-section .barber-actions {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: var(--padding-sm);
 }
 
-.popup-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background 0.3s;
+#barberForm .btn-primary {
+    background-color: #DAA520;
+    border-color: #DAA520;
 }
 
-.popup-button.confirm {
-    background: #4b2e1e;
-    color: #fff;
+#barberForm .btn-primary:hover {
+    background-color: #c19b1a;
+    border-color: #c19b1a;
 }
 
-.popup-button.confirm:hover {
-    background: #6b4e31;
-}
-
-.popup-button.cancel {
-    background: #d9534f;
-    color: #fff;
-}
-
-.popup-button.cancel:hover {
-    background: #c9302c;
-}
-
-/* Responsividade */
+/* ==========================================================================
+   5. Responsividade
+   ========================================================================== */
 @media (max-width: 768px) {
     body.manager-layout {
         flex-direction: column;
     }
 
     .top-header {
-        padding: 0.5rem;
+        padding: var(--padding-sm);
     }
 
     .header-title {
@@ -1116,7 +821,7 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .sidebar {
         width: 200px;
-        padding: 0.5rem;
+        padding: var(--padding-sm);
     }
 
     .sidebar .logo {
@@ -1125,38 +830,38 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .sidebar h2 {
         font-size: 1.2rem;
-        margin-bottom: 1rem;
+        margin-bottom: var(--padding-sm);
     }
 
     .sidebar nav {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--padding-sm);
     }
 
     .sidebar a {
-        padding: 0.5rem 1rem;
+        padding: var(--padding-sm) var(--padding-md);
         font-size: 0.9rem;
     }
 
     .subitems .nav-subitem {
-        padding: 0.3rem 1rem;
+        padding: 0.3rem var(--padding-md);
         font-size: 0.9rem;
     }
 
     .main-content {
-        padding: 1rem;
+        padding: var(--padding-sm);
         border-radius: 0;
         box-shadow: none;
         margin-top: 50px;
     }
 
     .appointment-form {
-        padding: 1rem;
-        margin: 0.5rem auto;
+        padding: var(--padding-sm);
+        margin: var(--padding-sm) auto;
     }
 
     .services-container {
-        padding: 0.5rem;
+        padding: var(--padding-sm);
     }
 
     .service-item {
@@ -1173,8 +878,8 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .container {
         max-width: 90%;
-        padding: 1rem;
-        margin: 1rem auto;
+        padding: var(--padding-sm);
+        margin: var(--padding-sm) auto;
     }
 
     .container .logo {
@@ -1196,7 +901,7 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .nav-buttons {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--padding-sm);
     }
 
     .nav-buttons button {
@@ -1205,7 +910,7 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .filter {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--padding-sm);
     }
 
     .filters {
@@ -1222,11 +927,10 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
 
     .time-slot {
         flex: 0 0 calc(33.33% - 0.2rem);
-        padding: 0.5rem;
+        padding: var(--padding-sm);
         font-size: 0.9rem;
     }
 
-    /* Ajustes para cards de agendamentos */
     #appointmentsList, #appointmentsTable {
         grid-template-columns: 1fr;
     }
@@ -1239,391 +943,70 @@ form#scheduleForm button, form#stockForm button, form#fixedExpenseForm button {
         font-size: 0.8rem;
     }
 
-    .appointment-card .appointment-actions {
-        flex-direction: column;
-        gap: 0.5rem;
+    .appointment-card .card-actions {
+        display: flex; /* Garante layout horizontal */
+        gap: var(--padding-sm);
         width: 100%;
-        margin-top: 0.5rem;
+        margin-top: var(--padding-sm);
     }
 
     .appointment-card .action-btn {
-        width: 100%;
-        padding: 0.5rem;
+        padding: var(--padding-sm) var(--padding-md);
         font-size: 0.9rem;
         text-align: center;
+        flex: 1; /* Divide o espaço igualmente */
     }
 
-    /* Transforma os cards de serviços em layout vertical no mobile */
-    #servicesList {
+    #barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
         grid-template-columns: 1fr;
     }
 
-    .service-card {
+    .card {
         padding: 0.8rem;
-        flex-direction: column;
-        align-items: flex-start;
     }
 
-    .service-card .service-info h4 {
+    .card .card-info h4 {
         font-size: 1rem;
     }
 
-    .service-card .service-info p {
+    .card .card-info p {
         font-size: 0.8rem;
     }
 
-    .service-card .service-actions {
-        flex-direction: column;
-        gap: 0.5rem;
+    .card .card-actions {
+        display: flex; /* Força layout horizontal */
+        gap: var(--padding-sm);
         width: 100%;
-        margin-top: 0.5rem;
+        margin-top: var(--padding-sm);
     }
 
-    .service-card .action-btn {
-        width: 100%;
-        padding: 0.5rem;
+    .card .action-btn {
+        padding: var(--padding-sm) var(--padding-md);
         font-size: 0.9rem;
         text-align: center;
-    }
-
-    /* Transforma os cards de horários em layout vertical no mobile */
-    #schedulesList {
-        grid-template-columns: 1fr;
-    }
-
-    .schedule-card {
-        padding: 0.8rem;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .schedule-card .schedule-info h4 {
-        font-size: 1rem;
-    }
-
-    .schedule-card .schedule-info p {
-        font-size: 0.8rem;
-    }
-
-    .schedule-card .schedule-actions {
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
-        margin-top: 0.5rem;
-    }
-
-    .schedule-card .action-btn {
-        width: 100%;
-        padding: 0.5rem;
-        font-size: 0.9rem;
-        text-align: center;
-    }
-
-    /* Transforma os cards de estoque em layout vertical no mobile */
-    #stockList {
-        grid-template-columns: 1fr;
-    }
-
-    .stock-card {
-        padding: 0.8rem;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .stock-card .stock-info h4 {
-        font-size: 1rem;
-    }
-
-    .stock-card .stock-info p {
-        font-size: 0.8rem;
-    }
-
-    .stock-card .stock-actions {
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
-        margin-top: 0.5rem;
-    }
-
-    .stock-card .action-btn {
-        width: 100%;
-        padding: 0.5rem;
-        font-size: 0.9rem;
-        text-align: center;
-    }
-
-    /* Transforma os cards de movimentações em layout vertical no mobile */
-    #stockMovementsList {
-        grid-template-columns: 1fr;
-    }
-
-    .movement-card {
-        padding: 0.8rem;
-    }
-
-    .movement-card p {
-        font-size: 0.8rem;
-    }
-
-    /* Transforma os cards de fluxo de caixa em layout vertical no mobile */
-    #cashflowList {
-        grid-template-columns: 1fr;
-    }
-
-    .action-btn {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.9rem;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-    }
-
-    #barbersList div, #schedulesList div, #stockList div, #stockMovementsList div, #cashflowList div {
-        padding: 0.3rem 0;
-        font-size: 0.8rem;
-    }
-
-    /* Estilo para a setinha do submenu */
-    .submenu-icon {
-        transition: transform 0.3s ease;
-        margin-left: auto;
-    }
-
-    /* Estilos para a seção de barbeiros - Redesign */
-    #barbers-section .barber-card {
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-    }
-
-    #barbers-section .barber-card:hover {
-        transform: translateY(-2px);
+        flex: 1; /* Cada botão ocupa espaço igual */
     }
 
     #barbers-section .barber-photo {
-        font-size: 40px;
-        color: #8B4513;
-        background: #f0f0f0;
-        width: 80px;
-        height: 80px;
-        line-height: 80px;
-        border-radius: 50%;
-        margin: 0 auto 10px;
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+        line-height: 60px;
     }
 
     #barbers-section .barber-name {
-        font-size: 18px;
-        font-weight: 700;
-        color: #8B4513;
-        margin-bottom: 10px;
+        font-size: 16px;
     }
 
-    #barbers-section .barber-actions {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
+    #barbers-section .barber-actions .btn-sm {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.85rem;
     }
 
-    #barbers-section .edit-btn, #barbers-section .delete-btn {
-        padding: 5px 10px;
-        border-radius: 4px;
-    }
-
-    #barbers-section .edit-btn {
-        background-color: #DAA520;
-        color: #fff;
-    }
-
-    #barbers-section .edit-btn:hover {
-        background-color: #c19b1a;
-    }
-
-    #barbers-section .delete-btn {
-        background-color: #d9534f;
-        color: #fff;
-    }
-
-    #barbers-section .delete-btn:hover {
-        background-color: #c9302c;
-    }
-
-    /* Ajustes responsivos para barbeiros */
-    @media (max-width: 768px) {
-        #barbersList {
-            grid-template-columns: 1fr !important;
-        }
-
-        #barbers-section .barber-card {
-            padding: 0.8rem;
-        }
-
-        #barbers-section .barber-photo {
-            width: 60px;
-            height: 60px;
-            font-size: 30px;
-            line-height: 60px;
-        }
-
-        #barbers-section .barber-name {
-            font-size: 16px;
-        }
-
-        #barbers-section .barber-actions .btn-sm {
-            padding: 0.3rem 0.6rem;
-            font-size: 0.85rem;
-        }
-    }
-
-    /* Ajustes no formulário de barbeiros */
-    #barberForm .btn-primary {
-        background-color: #DAA520;
-        border-color: #DAA520;
-    }
-
-    #barberForm .btn-primary:hover {
-        background-color: #c19b1a;
-        border-color: #c19b1a;
-    }
-
-    /* Estilos para a seção de serviços - Redesign ajustado */
-    #services-section .services-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* [PRINT] Define colunas flexíveis com mínimo de 250px */
-        gap: 1rem; /* [PRINT] Espaçamento entre os cards */
-        width: 100%; /* [PRINT] Ocupa toda a largura disponível */
-        padding: 0 1rem; /* [PRINT] Adiciona padding interno pra evitar corte à esquerda, ajustando simetricamente */
-        margin: 0 auto; /* [PRINT] Centraliza o grid na tela */
-        justify-content: center; /* [PRINT] Alinha os cards no centro, equilibrando espaços laterais */
-        box-sizing: border-box; /* [PRINT] Garante que padding e largura sejam calculados corretamente */
-    }
-
-    #services-section .service-card {
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        padding: 1rem;
-        transition: transform 0.2s;
-        position: relative;
-        width: 100%; /* [PRINT] Garante que cada card ocupe a célula completa */
-        box-sizing: border-box; /* [PRINT] Inclui padding na largura */
-    }
-
-    #services-section .service-card:hover {
-        transform: translateY(-2px);
-    }
-
-    #services-section .service-info h4 {
-        margin: 0 0 0.5rem;
-        color: #4b2e1e;
-        font-size: 1.1rem;
-        font-family: 'Poppins', sans-serif;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    #services-section .service-info p {
-        margin: 0.2rem 0;
-        font-size: 0.9rem;
-        color: #4b2e1e;
-        font-family: 'Roboto', sans-serif;
-    }
-
-    #services-section .service-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    #services-section .edit-service, #services-section .delete-service {
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-    }
-
-    #services-section .edit-service {
-        background-color: #DAA520;
-        color: #fff;
-    }
-
-    #services-section .edit-service:hover {
-        background-color: #c19b1a;
-    }
-
-    #services-section .delete-service {
-        background-color: #d9534f;
-        color: #fff;
-    }
-
-    #services-section .delete-service:hover {
-        background-color: #c9302c;
-    }
-
-    #services-section .fade-out {
-        opacity: 0;
-        transform: scale(0.95);
-        transition: all 0.3s ease;
-    }
-
-    /* Separador visual */
-    #services-section .separator {
-        text-align: center;
-        margin: 1.5rem 0;
-        font-size: 1.1rem;
-        color: #4b2e1e;
-        font-weight: 600;
-        position: relative;
-    }
-
-    #services-section .separator::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        height: 1px;
-        background: #e0e0e0;
-        z-index: -1;
-    }
-
-    #services-section .separator span {
-        background: #fff;
-        padding: 0 1rem;
-    }
-
-    /* Validação visual */
-    #services-section .form-control.is-invalid, #services-section .form-select.is-invalid {
-        border-color: #dc3545;
-    }
-
-    #services-section .invalid-feedback {
-        display: block;
-        color: #dc3545;
-        font-size: 0.875rem;
-    }
-
-    /* Ajustes responsivos */
-    @media (max-width: 768px) {
-        #services-section .services-list {
-            grid-template-columns: 1fr; /* [PRINT] Força uma coluna em telas menores */
-        }
-
-        #services-section .service-card {
-            padding: 0.8rem;
-        }
-
-        #services-section .service-info h4 {
-            font-size: 1rem;
-        }
-
-        #services-section .service-info p {
-            font-size: 0.8rem;
-        }
-
-        #services-section .service-actions .btn-sm {
-            padding: 0.3rem 0.6rem;
-            font-size: 0.85rem;
+    /* Empilhamento em telas muito pequenas (opcional) */
+    @media (max-width: 480px) {
+        .card .card-actions .action-btn {
+            flex: 0 0 100%; /* Empilha verticalmente */
         }
     }
 }

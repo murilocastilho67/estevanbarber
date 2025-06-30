@@ -15,12 +15,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.pt_BR.Cg3X8WmgH3E.O/m=gapi_iframes/rt=j/sv=1/d=1/ed=1/rs=AHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw/cb=gapi.loaded_0?le=scs" async></script>
     <script type="module">
-        import { firebaseConfig } from './js/config.js'; // Confirme que o caminho está correto
+        import { firebaseConfig } from './js/config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
-        console.log('Inicializando Firebase com config:', firebaseConfig); // Log de depuração
+        console.log('Inicializando Firebase com config:', firebaseConfig);
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -29,7 +29,6 @@
     </script>
 </head>
 <body class="manager-layout">
-    <!-- Resto do HTML mantido como no último envio -->
     <header class="top-header">
         <button class="menu-toggle" id="menuToggle">
             <i class="fas fa-bars"></i>
@@ -84,7 +83,7 @@
                     </div>
                 </div>
             </form>
-            <div id="barbersList" class="row row-cols-1 row-cols-md-2 g-3"></div>
+            <div id="barbersList" class="card-list"></div>
         </div>
 
         <div id="appointments-section" class="section active">
@@ -98,7 +97,7 @@
                 <label for="dateFilter">Data:</label>
                 <input type="date" id="dateFilter">
             </div>
-            <div id="appointmentsList"><p>Nenhum agendamento corresponde aos filtros.</p></div>
+            <div id="appointmentsList" class="card-list"></div>
             <div class="summary">
                 <p>Total de agendamentos: <span id="totalAppointments">0</span></p>
                 <p>Receita estimada: R$<span id="totalRevenue">0.00</span></p>
@@ -139,57 +138,56 @@
                 </div>
             </form>
             <div class="separator">Serviços Cadastrados</div>
-            <div id="servicesList" class="services-list"></div>
+            <div id="servicesList" class="card-list"></div>
         </div>
 
         <div id="schedules-section" class="section">
             <h2>Gerenciar Horários</h2>
             <button id="setupSchedules" class="action-btn">Cadastrar Horários Padrão</button>
-            <div class="schedule-form-container">
-                <h3>Novo Horário</h3>
-                <form id="scheduleForm">
-                    <input type="hidden" id="scheduleId" name="scheduleId">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="scheduleBarber">Barbeiro:</label>
-                            <select id="scheduleBarber" name="scheduleBarber" required></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="dayOfWeek">Dia da Semana:</label>
-                            <select id="dayOfWeek" name="dayOfWeek" required>
-                                <option value="Segunda">Segunda</option>
-                                <option value="Terça">Terça</option>
-                                <option value="Quarta">Quarta</option>
-                                <option value="Quinta">Quinta</option>
-                                <option value="Sexta">Sexta</option>
-                                <option value="Sábado">Sábado</option>
-                            </select>
-                        </div>
+            <form id="scheduleForm" class="mb-4">
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <input type="hidden" id="scheduleId" name="scheduleId">
+                        <label for="scheduleBarber" class="form-label">Barbeiro:</label>
+                        <select id="scheduleBarber" name="scheduleBarber" class="form-select" required>
+                            <option value="">Selecione um barbeiro</option>
+                            <!-- Opções serão preenchidas dinamicamente -->
+                        </select>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="startTime">Início:</label>
-                            <input type="time" id="startTime" name="startTime" required placeholder="hh:mm">
-                        </div>
-                        <div class="form-group">
-                            <label for="endTime">Fim:</label>
-                            <input type="time" id="endTime" name="endTime" required placeholder="hh:mm">
-                        </div>
+                    <div class="col-12 col-md-4">
+                        <label for="dayOfWeek" class="form-label">Dia da Semana:</label>
+                        <select id="dayOfWeek" name="dayOfWeek" class="form-select" required>
+                            <option value="Segunda">Segunda</option>
+                            <option value="Terça">Terça</option>
+                            <option value="Quarta">Quarta</option>
+                            <option value="Quinta">Quinta</option>
+                            <option value="Sexta">Sexta</option>
+                            <option value="Sábado">Sábado</option>
+                        </select>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="breakStart">Pausa - Início:</label>
-                            <input type="time" id="breakStart" name="breakStart" placeholder="hh:mm">
-                        </div>
-                        <div class="form-group">
-                            <label for="breakEnd">Pausa - Fim:</label>
-                            <input type="time" id="breakEnd" name="breakEnd" placeholder="hh:mm">
-                        </div>
+                    <div class="col-12 col-md-4">
+                        <label for="startTime" class="form-label">Início:</label>
+                        <input type="time" id="startTime" name="startTime" class="form-control" required>
                     </div>
-                    <button type="submit">Salvar Horário</button>
-                </form>
-            </div>
-            <div id="schedulesList" class="schedule-list"></div>
+                    <div class="col-12 col-md-4">
+                        <label for="endTime" class="form-label">Fim:</label>
+                        <input type="time" id="endTime" name="endTime" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="breakStart" class="form-label">Pausa - Início:</label>
+                        <input type="time" id="breakStart" name="breakStart" class="form-control">
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="breakEnd" class="form-label">Pausa - Fim:</label>
+                        <input type="time" id="breakEnd" name="breakEnd" class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Salvar Horário</button>
+                    </div>
+                </div>
+            </form>
+            <div class="separator">Horários Cadastrados</div>
+            <div id="schedulesList" class="card-list"></div>
         </div>
 
         <div id="stock-section" class="section">
@@ -207,7 +205,7 @@
                         <option value="exit">Saídas</option>
                     </select>
                 </div>
-                <div id="stockMovementsList"></div>
+                <div id="stockMovementsList" class="card-list"></div>
             </div>
             <div id="stock-products-section" class="subsection" style="display: none;">
                 <h2>Gerenciar Produtos</h2>
@@ -230,7 +228,7 @@
                     </select>
                     <button type="submit">Adicionar Produto</button>
                 </form>
-                <div id="stockList"></div>
+                <div id="stockList" class="card-list"></div>
                 <div class="summary">
                     <p>Valor Total do Estoque (Custo): R$<span id="totalStockValue">0.00</span></p>
                 </div>
@@ -239,10 +237,9 @@
 
         <div id="cashflow-section" class="section">
             <h2>Fluxo de Caixa</h2>
-            <!-- Resumo Financeiro -->
             <div id="cashflow-summary-section" class="subsection">
                 <h3>Resumo Financeiro</h3>
-                <div class="cashflow-summary">
+                <div class="summary-cards">
                     <div class="summary-card revenue">
                         <h4>Receitas</h4>
                         <p>R$ <span id="totalRevenueCashFlow">0.00</span></p>
@@ -256,8 +253,7 @@
                         <p>R$ <span id="netBalanceCashFlow">0.00</span></p>
                     </div>
                 </div>
-                <!-- Filtros -->
-                <div class="cashflow-filters">
+                <div class="filters">
                     <div class="filter-controls">
                         <label for="cashFlowPeriod">Período:</label>
                         <select id="cashFlowPeriod">
@@ -277,11 +273,9 @@
                         </select>
                     </div>
                 </div>
-                <!-- Gráficos -->
                 <div class="cashflow-charts">
                     <canvas id="cashFlowChart"></canvas>
                 </div>
-                <!-- Lista de Transações -->
                 <div class="cashflow-transactions-list">
                     <h3>Transações Detalhadas</h3>
                     <table>
@@ -298,7 +292,6 @@
                     </table>
                 </div>
             </div>
-            <!-- Formulário de Registro de Despesas Manuais -->
             <div id="cashflow-fixed-expense-section" class="subsection" style="display: none;">
                 <h3>Registrar Nova Despesa</h3>
                 <form id="newExpenseForm">
@@ -328,7 +321,6 @@
         </div>
     </div>
 
-    <!-- Pop-up personalizado -->
     <div class="popup-overlay" id="customPopup">
         <div class="popup">
             <h3 id="popupTitle">Estevan Barber</h3>
@@ -340,7 +332,6 @@
         </div>
     </div>
 
-    <!-- Pop-up para entrada/saída de estoque -->
     <div class="popup-overlay" id="stockMovementPopup">
         <div class="popup">
             <h3 id="stockMovementTitle"></h3>
@@ -363,12 +354,9 @@
         </div>
     </div>
 
-    <!-- Adiciona o JS do Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/manager/manager.js"></script>
-    <!-- Code injected by live-server -->
     <script>
-        // <![CDATA[  <-- For SVG support
         if ('WebSocket' in window) {
             (function () {
                 function refreshCSS() {
@@ -398,11 +386,9 @@
                     sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
                 }
             })();
-        }
-        else {
+        } else {
             console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
         }
-        // ]]>
     </script>
     <iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" tabindex="-1" vspace="0" width="100%" aria-hidden="true" id="I0_1749520766699" name="I0_1749520766699" src="https://barbearia-estevan.firebaseapp.com/__/auth/iframe?apiKey=AIzaSyAoQo2EVxEypXMirJjfmgiujeR3ij0ZzNU&appName=%5BDEFAULT%5D&v=10.14.1&eid=p&usegapi=1&jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.pt_BR.Cg3X8WmgH3E.O%2Fd%3D1%2Frs%3DAHpOoo8qFCDSlEMu2f0GnWBw9Wj7BbPAqw%2Fm%3D__features__#id=I0_1749520766699&_gfid=I0_1749520766699&parent=http%3A%2F%2F127.0.0.1%3A5500&pfname=&rpctoken=16509020" style="position: absolute; top: -100px; width: 1px; height: 1px;"></iframe><div id="dgwmh3ykva" style="display: block;"></div>
 </body>

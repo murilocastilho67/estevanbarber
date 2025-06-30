@@ -11,46 +11,43 @@ async function loadSchedules(db) {
         displayedScheduleIds.clear(); // Limpa o Set antes de recarregar
         const schedulesSnapshot = await getDocs(collection(db, 'schedules'));
         if (schedulesSnapshot.empty) {
-            schedulesList.innerHTML = '<p>Nenhum horário cadastrado.</p>';
+            schedulesList.innerHTML = '<p class="text-center">Nenhum horário cadastrado.</p>';
             return;
         }
 
         for (const docSnapshot of schedulesSnapshot.docs) {
             const sched = docSnapshot.data();
-            if (!displayedScheduleIds.has(docSnapshot.id)) { // Validação pra evitar duplicação
-                displayedScheduleIds.add(docSnapshot.id); // Marca o ID como exibido
+            if (!displayedScheduleIds.has(docSnapshot.id)) {
+                displayedScheduleIds.add(docSnapshot.id);
                 const dayPt = dayOfWeekPt[sched.dayOfWeek] || sched.dayOfWeek;
                 const barberDoc = await getDoc(doc(db, 'barbers', sched.barberId));
                 const barberName = barberDoc.exists() ? barberDoc.data().name : sched.barberId;
                 const card = document.createElement('div');
-                card.className = 'schedule-card';
+                card.className = 'card';
+                card.dataset.id = docSnapshot.id;
                 card.innerHTML = `
-                    <div class="schedule-header">
-                        <i class="fas fa-calendar-day"></i> ${dayPt} — <strong>${barberName}</strong>
-                    </div>
-                    <div class="schedule-time">
-                        <i class="fas fa-clock"></i> ${sched.startTime} - ${sched.endTime}
-                    </div>
-                    <div class="schedule-break">
-                        <i class="fas fa-pause-circle"></i> Pausa: ${sched.breakStart ? `${sched.breakStart} - ${sched.breakEnd}` : '—'}
+                    <div class="card-info">
+                        <h4>📅 ${dayPt} — <strong>${barberName}</strong></h4>
+                        <p>🕐 ${sched.startTime} - ${sched.endTime}</p>
+                        <p>⏸️ Pausa: ${sched.breakStart ? `${sched.breakStart} - ${sched.breakEnd}` : '—'}</p>
                     </div>
                     <div class="card-actions">
-                        <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn" title="Excluir"><i class="fas fa-trash-alt"></i></button>
+                        <button class="action-btn btn-edit" title="Editar serviço"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn btn-delete" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 `;
                 schedulesList.appendChild(card);
             }
         }
 
-        // Adiciona eventos aos botões de excluir
-        document.querySelectorAll('.delete-schedule').forEach(btn => {
+        document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async () => {
+                const card = btn.closest('.card');
                 const confirmed = await showPopup('Excluir horário?', true);
                 if (confirmed) {
                     try {
-                        await deleteDoc(doc(db, 'schedules', btn.dataset.id));
-                        console.log('Horário excluído:', btn.dataset.id);
+                        await deleteDoc(doc(db, 'schedules', card.dataset.id));
+                        console.log('Horário excluído:', card.dataset.id);
                         loadSchedules(db);
                         showPopup('Horário excluído com sucesso!');
                     } catch (error) {
@@ -61,16 +58,15 @@ async function loadSchedules(db) {
             });
         });
 
-        // Adiciona eventos aos botões de editar (precisa ser ajustado pra nova estrutura)
-        document.querySelectorAll('.edit-btn').forEach(btn => {
+        document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', () => {
-                const card = btn.closest('.schedule-card');
-                const dayOfWeek = card.querySelector('.schedule-header').textContent.split(' — ')[0].replace('<i class="fas fa-calendar-day"></i> ', '');
+                const card = btn.closest('.card');
+                const dayOfWeek = card.querySelector('h4').textContent.split(' — ')[0].replace('📅 ', '');
                 const barberId = Object.keys(dayOfWeekEn).find(key => dayOfWeekEn[key] === dayOfWeek) || dayOfWeek;
-                const startTime = card.querySelector('.schedule-time').textContent.split(' - ')[0].replace('<i class="fas fa-clock"></i> ', '');
-                const endTime = card.querySelector('.schedule-time').textContent.split(' - ')[1];
-                const breakStart = card.querySelector('.schedule-break').textContent.includes('-') ? card.querySelector('.schedule-break').textContent.split(' - ')[1].split(' ')[0] : '';
-                const breakEnd = card.querySelector('.schedule-break').textContent.includes('-') ? card.querySelector('.schedule-break').textContent.split(' - ')[2] : '';
+                const startTime = card.querySelectorAll('p')[0].textContent.split(' - ')[0].replace('🕐 ', '');
+                const endTime = card.querySelectorAll('p')[0].textContent.split(' - ')[1];
+                const breakStart = card.querySelectorAll('p')[1].textContent.includes('-') ? card.querySelectorAll('p')[1].textContent.split(' - ')[1].split(' ')[0] : '';
+                const breakEnd = card.querySelectorAll('p')[1].textContent.includes('-') ? card.querySelectorAll('p')[1].textContent.split(' - ')[2] : '';
                 window.editSchedule(card.dataset.id, dayOfWeek, barberId, startTime, endTime, breakStart, breakEnd);
             });
         });
