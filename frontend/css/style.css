@@ -944,17 +944,18 @@ th {
     }
 
     .appointment-card .card-actions {
-        display: flex; /* Garante layout horizontal */
+        display: flex;
         gap: var(--padding-sm);
-        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
         margin-top: var(--padding-sm);
     }
 
     .appointment-card .action-btn {
-        padding: var(--padding-sm) var(--padding-md);
-        font-size: 0.9rem;
-        text-align: center;
-        flex: 1; /* Divide o espaço igualmente */
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        min-width: 40px;
+        flex: 0 0 auto;
     }
 
     #barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
@@ -962,29 +963,29 @@ th {
     }
 
     .card {
-        padding: 0.8rem;
+        padding: 1rem; /* Aumenta o padding para evitar colisão */
+        flex-direction: row; /* Mantém row por padrão */
+        flex-wrap: wrap; /* Permite quebra de linha */
     }
 
-    .card .card-info h4 {
-        font-size: 1rem;
-    }
-
-    .card .card-info p {
-        font-size: 0.8rem;
+    .card .card-info {
+        flex: 1; /* Garante que o card-info ocupe o espaço disponível */
+        min-width: 0; /* Evita overflow do texto */
     }
 
     .card .card-actions {
-        display: flex; /* Força layout horizontal */
+        display: flex;
         gap: var(--padding-sm);
-        width: 100%;
+        flex-wrap: wrap; /* Permite que os botões quebrem se necessário */
+        justify-content: flex-end; /* Alinha os botões à direita */
         margin-top: var(--padding-sm);
     }
 
     .card .action-btn {
-        padding: var(--padding-sm) var(--padding-md);
-        font-size: 0.9rem;
-        text-align: center;
-        flex: 1; /* Cada botão ocupa espaço igual */
+        padding: 0.5rem; /* Reduz o padding */
+        font-size: 0.8rem; /* Reduz o tamanho da fonte */
+        min-width: 40px; /* Garante um tamanho mínimo clicável */
+        flex: 0 0 auto; /* Impede que os botões se estiquem demais */
     }
 
     #barbers-section .barber-photo {
@@ -1003,10 +1004,21 @@ th {
         font-size: 0.85rem;
     }
 
-    /* Empilhamento em telas muito pequenas (opcional) */
+    /* Ajuste para telas muito pequenas */
     @media (max-width: 480px) {
-        .card .card-actions .action-btn {
-            flex: 0 0 100%; /* Empilha verticalmente */
+        .card {
+            flex-direction: column; /* Empilha card-info e card-actions */
+            align-items: stretch;
+        }
+
+        .card .card-actions {
+            justify-content: space-between; /* Distribui os botões igualmente */
+            width: 100%; /* Ocupa toda a largura */
+        }
+
+        .card .action-btn {
+            flex: 1; /* Cada botão ocupa espaço igual */
+            min-width: 0; /* Remove restrição de largura mínima */
         }
     }
 }
