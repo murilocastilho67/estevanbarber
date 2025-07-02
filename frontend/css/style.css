@@ -222,7 +222,7 @@ a:hover {
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-medium);
     margin: 0;
-    margin-top: 60px;
+    margin-top: 70px; /* Aumentado para acomodar o cabeçalho */
     transition: padding-left var(--transition);
 }
 
@@ -469,8 +469,16 @@ summary {
     font-size: 1rem;
 }
 
+/* Container dos horários disponíveis */
+#timeSlots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--padding-sm);
+    margin: var(--padding-md) 0;
+}
+
 .time-slot {
-    flex: 0 0 calc(33.33% - 0.2rem);
+    flex: 0 0 calc(33.33% - 0.4rem);
     padding: var(--padding-sm);
     background-color: #f5f5f5;
     border: 2px solid var(--primary-color);
@@ -480,6 +488,7 @@ summary {
     color: var(--primary-color);
     text-align: center;
     box-sizing: border-box;
+    transition: all var(--transition);
 }
 
 .time-slot:hover {
@@ -726,20 +735,12 @@ th {
     color: var(--primary-color);
 }
 
-#barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
+#barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList, #servicesList, #appointmentsList {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--padding-md);
+    gap: var(--padding-lg);
     margin-top: var(--padding-md);
 }
-
-#appointmentsList {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--padding-md);
-    margin-top: var(--padding-md);
-}
-
 .separator {
     text-align: center;
     margin: var(--padding-lg) 0;
@@ -852,7 +853,7 @@ th {
         padding: var(--padding-sm);
         border-radius: 0;
         box-shadow: none;
-        margin-top: 50px;
+        margin-top: 60px; /* Ajustado para telas menores */
     }
 
     .appointment-form {
@@ -922,43 +923,20 @@ th {
     }
 
     #timeSlots {
-        gap: 0.2rem;
+        gap: var(--padding-sm);
     }
 
     .time-slot {
-        flex: 0 0 calc(33.33% - 0.2rem);
+        flex: 0 0 calc(33.33% - 0.4rem);
         padding: var(--padding-sm);
-        font-size: 0.9rem;
-    }
-
-    #appointmentsList, #appointmentsTable {
-        grid-template-columns: 1fr;
-    }
-
-    .appointment-card {
-        padding: 0.8rem;
-    }
-
-    .appointment-card p {
-        font-size: 0.8rem;
-    }
-
-    .appointment-card .card-actions {
+        font-size: 0.85rem;
+        min-height: 40px;
         display: flex;
-        gap: var(--padding-sm);
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        margin-top: var(--padding-sm);
+        align-items: center;
+        justify-content: center;
     }
 
-    .appointment-card .action-btn {
-        padding: 0.5rem;
-        font-size: 0.8rem;
-        min-width: 40px;
-        flex: 0 0 auto;
-    }
-
-    #barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
+    #appointmentsList, #appointmentsTable, #barbersList, #schedulesList, #stockList, #stockMovementsList, #cashflowList {
         grid-template-columns: 1fr;
     }
 
@@ -1022,3 +1000,145 @@ th {
         }
     }
 }
+
+
+/* Estilo para o botão Salvar Horário */
+#scheduleForm .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+#scheduleForm .btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+
+
+
+
+/* Estilo para botões com a classe btn-theme */
+button.btn-theme {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: #fff !important;
+}
+
+button.btn-theme:hover {
+    background-color: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
+    color: #fff !important;
+}
+
+
+
+
+
+/* Padronização dos cards de serviço */
+
+
+
+
+/* Estilos para controles de visualização */
+.view-controls {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.view-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    background-color: #fff;
+    color: var(--primary-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.view-btn:hover {
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+.view-btn.active {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* Estilos para o calendário */
+#calendar {
+    margin-top: var(--padding-md);
+    background-color: #fff;
+    border-radius: var(--border-radius-md);
+    padding: var(--padding-md);
+    box-shadow: var(--shadow-medium);
+}
+
+/* Customização do FullCalendar */
+.fc-toolbar {
+    margin-bottom: var(--padding-md) !important;
+}
+
+.fc-toolbar-title {
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+}
+
+.fc-button-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.fc-button-primary:hover {
+    background-color: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
+}
+
+.fc-event {
+    border-radius: var(--border-radius-sm) !important;
+    border: none !important;
+    padding: 2px 4px !important;
+    font-size: 0.85rem !important;
+}
+
+.fc-event-title {
+    font-weight: 500 !important;
+}
+
+/* Cores diferentes para cada barbeiro */
+.fc-event.barber-1 {
+    background-color: #4b2e1e !important;
+}
+
+.fc-event.barber-2 {
+    background-color: #6b4e31 !important;
+}
+
+.fc-event.barber-3 {
+    background-color: #8b6e51 !important;
+}
+
+.fc-event.barber-4 {
+    background-color: #ab8e71 !important;
+}
+
+/* Responsividade para controles de visualização */
+@media (max-width: 768px) {
+    .filter {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .view-controls {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .view-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+

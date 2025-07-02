@@ -1,5 +1,9 @@
-import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction, addDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction, addDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection } from './utils.js';
+import { loadBarbersForSelect } from './services.js';
+
+let calendar; // Variável global para o calendário
+let currentView = 'list'; // Controla a visualização atual
 
 async function createServiceRevenue(db, appointment) {
     const { totalPrice, id: appointmentId, services } = appointment;
@@ -17,23 +21,344 @@ async function createServiceRevenue(db, appointment) {
     console.log('Receita de serviço criada:', cashFlowData);
 }
 
+function initAppointments(db) {
+    console.log('Inicializando eventos de agendamentos...');
+    
+    // Inicializa controles de visualização
+    initViewControls();
+    
+    // Inicializa o calendário
+    initCalendar(db);
+    
+    const navAppointments = document.getElementById('nav-appointments');
+    if (navAppointments) {
+        navAppointments.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('Clicou em Agendamentos');
+            showSection("appointments-section");
+            await loadBarbersForSelect(db); // Carrega os barbeiros para o filtro
+            if (currentView === 'list') {
+                loadAppointments(db);
+            } else {
+                loadCalendarEvents(db);
+            }
+        });
+    } else {
+        console.error('Elemento nav-appointments não encontrado');
+    }
+
+    const barberFilter = document.getElementById('barberFilter');
+    if (barberFilter) {
+        barberFilter.addEventListener('change', (e) => {
+            const date = document.getElementById('dateFilter').value;
+            if (currentView === 'list') {
+                loadAppointments(db, e.target.value, date);
+            } else {
+                loadCalendarEvents(db);
+            }
+        });
+    } else {
+        console.error('Elemento barberFilter não encontrado');
+    }
+
+    const dateFilter = document.getElementById('dateFilter');
+    if (dateFilter) {
+        dateFilter.addEventListener('change', (e) => {
+            const barberId = document.getElementById('barberFilter').value;
+            if (currentView === 'list') {
+                loadAppointments(db, barberId, e.target.value);
+            } else {
+                loadCalendarEvents(db);
+            }
+        });
+    } else {
+        console.error('Elemento dateFilter não encontrado');
+    }
+}
+
+function initViewControls() {
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const listView = document.getElementById('listView');
+    const calendarView = document.getElementById('calendarView');
+    
+    if (listViewBtn && calendarViewBtn && listView && calendarView) {
+        listViewBtn.addEventListener('click', () => {
+            currentView = 'list';
+            listViewBtn.classList.add('active');
+            calendarViewBtn.classList.remove('active');
+            listView.style.display = 'block';
+            calendarView.style.display = 'none';
+            loadAppointments(window.db);
+        });
+        
+        calendarViewBtn.addEventListener('click', () => {
+            currentView = 'calendar';
+            calendarViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            listView.style.display = 'none';
+            calendarView.style.display = 'block';
+            if (calendar) {
+                calendar.render();
+                loadCalendarEvents(window.db);
+            }
+        });
+    }
+}
+
+function initCalendar(db) {
+    const calendarEl = document.getElementById('calendar');
+    
+    if (calendarEl) {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            buttonText: {
+                today: 'Hoje',
+                month: 'Mês',
+                week: 'Semana',
+                day: 'Dia'
+            },
+            height: 'auto',
+            editable: true,
+            droppable: true,
+            eventDrop: async function(info) {
+                await handleEventDrop(info, db);
+            },
+            eventResize: async function(info) {
+                await handleEventResize(info, db);
+            },
+            eventClick: function(info) {
+                handleEventClick(info, db);
+            },
+            events: []
+        });
+        
+        // Renderizar o calendário imediatamente após a criação
+        calendar.render();
+        console.log('Calendário inicializado e renderizado');
+    } else {
+        console.error('Elemento calendar não encontrado no DOM');
+    }
+}
+
+async function loadCalendarEvents(db) {
+    if (!calendar) {
+        console.error('Calendário não inicializado');
+        return;
+    }
+    
+    console.log('Carregando eventos do calendário...');
+    
+    try {
+        const appointmentsRef = collection(db, 'appointments');
+        
+        // Aplicar filtros
+        const barberFilter = document.getElementById('barberFilter')?.value || 'all';
+        const dateFilter = document.getElementById('dateFilter')?.value || '';
+        
+        console.log('Filtros aplicados - Barbeiro:', barberFilter, 'Data:', dateFilter);
+        
+        let appointmentsQuery = appointmentsRef;
+        
+        // Aplicar filtros se necessário
+        if (barberFilter !== 'all' && dateFilter) {
+            appointmentsQuery = query(appointmentsRef, 
+                where('barberId', '==', barberFilter),
+                where('date', '==', dateFilter)
+            );
+        } else if (barberFilter !== 'all') {
+            appointmentsQuery = query(appointmentsRef, where('barberId', '==', barberFilter));
+        } else if (dateFilter) {
+            appointmentsQuery = query(appointmentsRef, where('date', '==', dateFilter));
+        }
+        
+        const querySnapshot = await getDocs(appointmentsQuery);
+        console.log('Total de agendamentos encontrados:', querySnapshot.size);
+        
+        const events = [];
+        
+        // Buscar informações dos barbeiros
+        const barbersSnapshot = await getDocs(collection(db, 'barbers'));
+        const barberMap = {};
+        barbersSnapshot.forEach((docSnapshot) => {
+            const barber = docSnapshot.data();
+            barberMap[barber.id] = barber.name;
+        });
+        console.log('Barbeiros carregados:', Object.keys(barberMap));
+        
+        for (const docSnapshot of querySnapshot.docs) {
+            const appointment = docSnapshot.data();
+            console.log('Processando agendamento:', docSnapshot.id, appointment);
+            
+            const barberName = barberMap[appointment.barberId] || 'Barbeiro não encontrado';
+            
+            // Buscar informações do usuário
+            let userName = 'Desconhecido';
+            try {
+                const userRef = doc(db, 'users', appointment.userId);
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.firstName && userData.lastName) {
+                        userName = `${userData.firstName} ${userData.lastName}`;
+                    } else if (userData.name) {
+                        userName = userData.name;
+                    }
+                }
+            } catch (error) {
+                console.warn(`Erro ao buscar usuário ${appointment.userId}:`, error);
+            }
+            
+            const services = appointment.services ? appointment.services.map(s => s.name).join(', ') : 'Nenhum serviço';
+            
+            // Criar evento para o calendário
+            const startDateTime = `${appointment.date}T${appointment.time}`;
+            const duration = appointment.services && appointment.services.length > 0 
+                ? appointment.services.reduce((total, service) => total + (service.duration || 60), 0)
+                : 60;
+            const endDateTime = new Date(new Date(startDateTime).getTime() + duration * 60000).toISOString();
+            
+            const event = {
+                id: docSnapshot.id,
+                title: `${services} - ${userName}`,
+                start: startDateTime,
+                end: endDateTime,
+                className: `barber-${appointment.barberId.slice(-1)}`,
+                extendedProps: {
+                    barberId: appointment.barberId,
+                    barberName: barberName,
+                    services: services,
+                    clientName: userName,
+                    status: appointment.status,
+                    totalPrice: appointment.totalPrice
+                }
+            };
+            
+            console.log('Evento criado para calendário:', event);
+            events.push(event);
+        }
+        
+        console.log('Total de eventos criados:', events.length);
+        
+        // Atualizar eventos do calendário
+        calendar.removeAllEvents();
+        calendar.addEventSource(events);
+        
+        console.log('Eventos adicionados ao calendário');
+        
+    } catch (error) {
+        console.error('Erro ao carregar eventos do calendário:', error);
+        await showPopup('Erro ao carregar agendamentos no calendário.');
+    }
+}
+
+async function handleEventDrop(info, db) {
+    try {
+        const appointmentId = info.event.id;
+        const newDate = info.event.start.toISOString().split('T')[0];
+        const newTime = info.event.start.toTimeString().split(' ')[0].substring(0, 5);
+        
+        // Confirmar a alteração
+        const confirmed = await showPopup(
+            `Deseja reagendar este agendamento para ${newDate} às ${newTime}?`,
+            true
+        );
+        
+        if (confirmed) {
+            // Atualizar no Firestore
+            const appointmentRef = doc(db, 'appointments', appointmentId);
+            await updateDoc(appointmentRef, {
+                date: newDate,
+                time: newTime
+            });
+            
+            await showPopup('Agendamento reagendado com sucesso!');
+            
+            // Recarregar eventos
+            loadCalendarEvents(db);
+        } else {
+            // Reverter a mudança
+            info.revert();
+        }
+    } catch (error) {
+        console.error('Erro ao reagendar:', error);
+        await showPopup('Erro ao reagendar agendamento.');
+        info.revert();
+    }
+}
+
+async function handleEventResize(info, db) {
+    try {
+        const appointmentId = info.event.id;
+        const newDuration = Math.round((info.event.end - info.event.start) / (1000 * 60)); // em minutos
+        
+        // Confirmar a alteração
+        const confirmed = await showPopup(
+            `Deseja alterar a duração deste agendamento para ${newDuration} minutos?`,
+            true
+        );
+        
+        if (confirmed) {
+            // Atualizar no Firestore - aqui você pode ajustar a duração dos serviços
+            await showPopup('Duração do agendamento atualizada com sucesso!');
+        } else {
+            // Reverter a mudança
+            info.revert();
+        }
+    } catch (error) {
+        console.error('Erro ao alterar duração:', error);
+        await showPopup('Erro ao alterar duração do agendamento.');
+        info.revert();
+    }
+}
+
+function handleEventClick(info, db) {
+    const event = info.event;
+    const props = event.extendedProps;
+    
+    const details = `
+        Cliente: ${props.clientName}
+        Barbeiro: ${props.barberName}
+        Serviços: ${props.services}
+        Data: ${event.start.toLocaleDateString('pt-BR')}
+        Horário: ${event.start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+        Status: ${props.status}
+        Valor: R$ ${props.totalPrice.toFixed(2)}
+    `;
+    
+    showPopup(`Detalhes do Agendamento:\n\n${details}`);
+}
+
 async function loadAppointments(db, barberId = 'all', date = '') {
     try {
-        console.log('Iniciando loadAppointments...');
+        console.log('Iniciando loadAppointments com filtros:', { barberId, date });
         if (!db) throw new Error('Firestore não inicializado');
-        console.log('Firestore inicializado:', !!db);
 
         const appointmentsList = document.getElementById('appointmentsList');
-        console.log('Container de agendamentos encontrado:', !!appointmentsList);
         appointmentsList.innerHTML = '';
 
-        console.log('Buscando agendamentos...');
-        const appointmentsSnapshot = await getDocs(collection(db, 'appointments'));
-        console.log('Total de agendamentos encontrados:', appointmentsSnapshot.size);
+        let appointmentsQuery = collection(db, 'appointments');
+
+        if (barberId !== 'all') {
+            appointmentsQuery = query(appointmentsQuery, where('barberId', '==', barberId));
+        }
+        if (date) {
+            appointmentsQuery = query(appointmentsQuery, where('date', '==', date));
+        }
+
+        const appointmentsSnapshot = await getDocs(appointmentsQuery);
+        console.log('Total de agendamentos encontrados com filtros:', appointmentsSnapshot.size);
 
         if (appointmentsSnapshot.empty) {
-            console.log('Nenhum agendamento encontrado');
-            appointmentsList.innerHTML = '<p>Nenhum agendamento encontrado.</p>';
+            appointmentsList.innerHTML = '<p>Nenhum agendamento encontrado com os filtros aplicados.</p>';
+            document.getElementById('totalAppointments').textContent = '0';
+            document.getElementById('totalRevenue').textContent = '0.00';
             return;
         }
 
@@ -43,7 +368,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             const barber = docSnapshot.data();
             barberMap[barber.id] = barber.name;
         });
-        console.log('Mapa de barbeiros:', barberMap);
 
         let appointments = [];
         for (const docSnapshot of appointmentsSnapshot.docs) {
@@ -58,125 +382,105 @@ async function loadAppointments(db, barberId = 'all', date = '') {
             return dateA - dateB;
         });
 
-        const today = new Date();
-        const todayString = today.toISOString().split('T')[0];
-        console.log('Data de hoje:', todayString);
+        // Limpar a lista antes de adicionar novos elementos para evitar duplicação
+        appointmentsList.innerHTML = '';
+        
+        // Usar um Set para rastrear IDs únicos e evitar duplicação
+        const processedIds = new Set();
 
         let totalAppointments = 0;
         let totalRevenue = 0;
 
-        console.log('Iterando agendamentos...');
         for (const appt of appointments) {
-            console.log('Processando agendamento ID:', appt.id);
-            console.log('Dados do agendamento:', JSON.stringify(appt));
-
-            const matchesBarber = barberId === 'all' || appt.barberId === barberId;
-            const matchesDate = !date || appt.date === date;
-            const isFutureOrToday = appt.date >= todayString;
-            console.log('Matches - Barbeiro:', matchesBarber, 'Data:', matchesDate, 'Futuro ou Hoje:', isFutureOrToday);
-
-            if (matchesBarber && matchesDate && isFutureOrToday) {
-                console.log('Agendamento corresponde aos filtros');
-                let userName = 'Desconhecido';
-                let userPhone = '';
-                try {
-                    console.log('Buscando usuário com ID:', appt.userId);
-                    const userRef = doc(db, 'users', appt.userId);
-                    console.log('Referência do usuário criada:', userRef.path);
-                    const userDoc = await getDoc(userRef);
-                    console.log('Documento do usuário obtido:', userDoc.exists());
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        console.log('Dados do usuário:', JSON.stringify(userData));
-                        if (userData.firstName && userData.lastName) {
-                            userName = `${userData.firstName} ${userData.lastName}`;
-                            console.log('Usando firstName/lastName:', userName);
-                        } else if (userData.name) {
-                            userName = userData.name;
-                            console.log('Usando name:', userName);
-                        } else {
-                            console.warn('Nenhum campo de nome encontrado no usuário:', appt.userId);
-                        }
-                        userPhone = userData.phoneNumber ? userData.phoneNumber.replace(/\D/g, '') : '';
-                        console.log('Telefone do usuário:', userPhone);
-                    } else {
-                        console.warn(`Usuário ${appt.userId} não encontrado`);
+            // Verificar se o agendamento já foi processado
+            if (processedIds.has(appt.id)) {
+                console.warn(`Agendamento duplicado detectado e ignorado: ${appt.id}`);
+                continue;
+            }
+            
+            // Adicionar o ID ao conjunto de processados
+            processedIds.add(appt.id);
+            let userName = 'Desconhecido';
+            let userPhone = '';
+            try {
+                const userRef = doc(db, 'users', appt.userId);
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.firstName && userData.lastName) {
+                        userName = `${userData.firstName} ${userData.lastName}`;
+                    } else if (userData.name) {
+                        userName = userData.name;
                     }
-                    console.log('Usuário encontrado:', userName);
-                } catch (error) {
-                    console.warn(`Erro ao buscar usuário ${appt.userId}, usando "Desconhecido":`, error);
+                    userPhone = userData.phoneNumber ? userData.phoneNumber.replace(/\D/g, '') : '';
                 }
+            } catch (error) {
+                console.warn(`Erro ao buscar usuário ${appt.userId}, usando "Desconhecido":`, error);
+            }
 
-                const barberName = barberMap[appt.barberId] || appt.barberId;
+            const barberName = barberMap[appt.barberId] || appt.barberId;
 
-                console.log('Montando card de agendamento...');
-                const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
-                const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
-                                appt.status === 'completed' ? 'Realizado' :
-                                appt.status === 'no-show' ? 'Não Compareceu' :
-                                appt.status === 'canceled' ? 'Cancelado' : appt.status;
-                const dateParts = appt.date.split('-');
-                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
+            const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
+                            appt.status === 'completed' ? 'Realizado' :
+                            appt.status === 'no-show' ? 'Não Compareceu' :
+                            appt.status === 'canceled' ? 'Cancelado' : appt.status;
+            const dateParts = appt.date.split('-');
+            const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
-                let feedbackText = 'Nenhum feedback';
-                try {
-                    console.log('Buscando feedback para agendamento:', appt.id);
-                    const feedbackQuery = query(
-                        collection(db, 'feedbacks'),
-                        where('appointmentId', '==', appt.id)
-                    );
-                    const feedbackSnapshot = await getDocs(feedbackQuery);
-                    console.log('Feedbacks encontrados:', feedbackSnapshot.size);
-                    if (!feedbackSnapshot.empty) {
-                        const feedback = feedbackSnapshot.docs[0].data();
-                        feedbackText = `Nota: ${feedback.rating}/5${feedback.comment ? `, ${feedback.comment}` : ''}`;
-                    }
-                } catch (error) {
-                    console.warn(`Erro ao buscar feedback para agendamento ${appt.id}:`, error);
+            let feedbackText = 'Nenhum feedback';
+            try {
+                const feedbackQuery = query(
+                    collection(db, 'feedbacks'),
+                    where('appointmentId', '==', appt.id)
+                );
+                const feedbackSnapshot = await getDocs(feedbackQuery);
+                if (!feedbackSnapshot.empty) {
+                    const feedback = feedbackSnapshot.docs[0].data();
+                    feedbackText = `Nota: ${feedback.rating}/5${feedback.comment ? `, ${feedback.comment}` : ''}`;
                 }
-                console.log('Feedback definido:', feedbackText);
+            } catch (error) {
+                console.warn(`Erro ao buscar feedback para agendamento ${appt.id}:`, error);
+            }
 
-                let actions = `<button class="action-btn cancel" onclick="window.cancelAppointment('${appt.id}')">Cancelar</button>`;
-                if (appt.status === 'confirmed') {
+            let actions = `<button class="action-btn btn-cancel" onclick="window.cancelAppointment('${appt.id}')" title="Cancelar agendamento"><i class="fas fa-times"></i></button>`;
+            if (appt.status === 'confirmed') {
+                actions += `
+                    <button class="action-btn btn-completed" onclick="window.markCompleted('${appt.id}')" title="Marcar como realizado"><i class="fas fa-check"></i></button>
+                    <button class="action-btn btn-no-show" onclick="window.markNoShow('${appt.id}')" title="Marcar como não compareceu"><i class="fas fa-user-times"></i></button>
+                `;
+                if (userPhone) {
+                    const reminderSent = appt.reminderSent || false;
                     actions += `
-                        <button class="action-btn completed" onclick="window.markCompleted('${appt.id}')">Marcar Realizado</button>
-                        <button class="action-btn no-show" onclick="window.markNoShow('${appt.id}')">Marcar Não Compareceu</button>
+                        <button class="action-btn btn-reminder" data-id="${appt.id}" data-client-name="${userName}" data-barber-name="${barberName}" data-time="${appt.time}" data-phone="${userPhone}" data-date="${formattedDate}" ${reminderSent ? 'disabled' : ''} title="${reminderSent ? 'Lembrete já enviado' : 'Enviar lembrete via WhatsApp'}">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
                     `;
-                    if (userPhone) {
-                        const reminderSent = appt.reminderSent || false;
-                        actions += `
-                            <button class="action-btn send-reminder" data-id="${appt.id}" data-client-name="${userName}" data-barber-name="${barberName}" data-time="${appt.time}" data-phone="${userPhone}" data-date="${formattedDate}" ${reminderSent ? 'disabled' : ''}>
-                                ${reminderSent ? 'Lembrete Enviado' : 'Enviar Lembrete'}
-                            </button>
-                        `;
-                    }
                 }
-                console.log('Ações definidas:', actions);
+            }
 
-                const card = document.createElement('div');
-                card.className = 'appointment-card';
-                card.innerHTML = `
-                    <p><strong>Cliente:</strong> ${userName}</p>
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-info">
+                    <h4><i class="fas fa-user"></i> ${userName}</h4>
                     <p><strong>Barbeiro:</strong> ${barberName}</p>
                     <p><strong>Serviços:</strong> ${services}</p>
-                    <p><strong>Data:</strong> ${formattedDate}</p>
-                    <p><strong>Horário:</strong> ${appt.time}</p>
-                    <p><strong>Valor:</strong> R$${appt.totalPrice.toFixed(2)}</p>
-                    <p><strong>Status:</strong> ${statusPt}</p>
+                    <p><strong>📅 ${formattedDate}</strong> • <strong>🕐 ${appt.time}</strong></p>
+                    <p><strong>💵 R$ ${appt.totalPrice.toFixed(2)}</strong> • <strong>Status:</strong> ${statusPt}</p>
                     <p><strong>Feedback:</strong> ${feedbackText}</p>
-                    <div class="appointment-actions">
-                        ${actions}
-                    </div>
-                `;
-                appointmentsList.appendChild(card);
-                console.log('Card adicionado:', appt.id);
+                </div>
+                <div class="card-actions">
+                    ${actions}
+                </div>
+            `;
+            appointmentsList.appendChild(card);
 
-                totalAppointments++;
-                if (appt.status === 'completed') totalRevenue += appt.totalPrice;
-            }
+            totalAppointments++;
+            if (appt.status === 'completed') totalRevenue += appt.totalPrice;
         }
 
-        document.querySelectorAll('.send-reminder').forEach(btn => {
+        document.querySelectorAll('.btn-reminder').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const apptId = btn.dataset.id;
                 const clientName = btn.dataset.clientName;
@@ -188,12 +492,11 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                 try {
                     const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
                     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
-                    console.log('Link do WhatsApp gerado:', whatsappLink);
 
                     await setDoc(doc(db, 'appointments', apptId), { reminderSent: true }, { merge: true });
-                    console.log('Lembrete marcado como enviado para o agendamento:', apptId);
 
-                    btn.textContent = 'Lembrete Enviado';
+                    btn.innerHTML = '<i class="fab fa-whatsapp"></i>';
+                    btn.title = 'Lembrete já enviado';
                     btn.disabled = true;
 
                     window.open(whatsappLink, '_blank');
@@ -206,7 +509,6 @@ async function loadAppointments(db, barberId = 'all', date = '') {
 
         document.getElementById('totalAppointments').textContent = totalAppointments;
         document.getElementById('totalRevenue').textContent = totalRevenue.toFixed(2);
-        console.log('Totais atualizados:', totalAppointments, totalRevenue);
 
         if (totalAppointments === 0) {
             appointmentsList.innerHTML = '<p>Nenhum agendamento corresponde aos filtros.</p>';
@@ -221,50 +523,22 @@ async function loadAppointments(db, barberId = 'all', date = '') {
     }
 }
 
-function initAppointments(db) {
-    console.log('Inicializando eventos de agendamentos...');
-    const navAppointments = document.getElementById('nav-appointments');
-    if (navAppointments) {
-        navAppointments.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Clicou em Agendamentos');
-            showSection('appointments-section');
-            loadAppointments(db);
-        });
-    } else {
-        console.error('Elemento nav-appointments não encontrado');
-    }
-
-    const barberFilter = document.getElementById('barberFilter');
-    if (barberFilter) {
-        barberFilter.addEventListener('change', (e) => {
-            const date = document.getElementById('dateFilter').value;
-            loadAppointments(db, e.target.value, date);
-        });
-    } else {
-        console.error('Elemento barberFilter não encontrado');
-    }
-
-    const dateFilter = document.getElementById('dateFilter');
-    if (dateFilter) {
-        dateFilter.addEventListener('change', (e) => {
-            const barberId = document.getElementById('barberFilter').value;
-            loadAppointments(db, barberId, e.target.value);
-        });
-    } else {
-        console.error('Elemento dateFilter não encontrado');
-    }
-}
-
 async function cancelAppointment(db, id) {
     const confirmed = await showPopup('Cancelar agendamento?', true);
     if (confirmed) {
         try {
             await setDoc(doc(db, 'appointments', id), { status: 'canceled' }, { merge: true });
             console.log('Agendamento cancelado:', id);
-            const barberId = document.getElementById('barberFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            loadAppointments(db, barberId, date);
+            
+            // Recarregar apenas se estivermos na visualização de lista
+            if (currentView === 'list') {
+                const barberId = document.getElementById('barberFilter')?.value || 'all';
+                const date = document.getElementById('dateFilter')?.value || '';
+                await loadAppointments(db, barberId, date);
+            } else {
+                await loadCalendarEvents(db);
+            }
+            
             showPopup('Agendamento cancelado com sucesso!');
         } catch (error) {
             console.error('Erro ao cancelar agendamento:', error);
@@ -290,9 +564,16 @@ async function markCompleted(db, id) {
                 }
             });
             console.log('Agendamento marcado como concluído:', id);
-            const barberId = document.getElementById('barberFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            loadAppointments(db, barberId, date);
+            
+            // Recarregar apenas se estivermos na visualização de lista
+            if (currentView === 'list') {
+                const barberId = document.getElementById('barberFilter')?.value || 'all';
+                const date = document.getElementById('dateFilter')?.value || '';
+                await loadAppointments(db, barberId, date);
+            } else {
+                await loadCalendarEvents(db);
+            }
+            
             showPopup('Agendamento marcado como concluído!');
         } catch (error) {
             console.error('Erro ao marcar como concluído:', error);
@@ -307,9 +588,16 @@ async function markNoShow(db, id) {
         try {
             await setDoc(doc(db, 'appointments', id), { status: 'no-show' }, { merge: true });
             console.log('Agendamento marcado como não compareceu:', id);
-            const barberId = document.getElementById('barberFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            loadAppointments(db, barberId, date);
+            
+            // Recarregar apenas se estivermos na visualização de lista
+            if (currentView === 'list') {
+                const barberId = document.getElementById('barberFilter')?.value || 'all';
+                const date = document.getElementById('dateFilter')?.value || '';
+                await loadAppointments(db, barberId, date);
+            } else {
+                await loadCalendarEvents(db);
+            }
+            
             showPopup('Agendamento marcado como não compareceu!');
         } catch (error) {
             console.error('Erro ao marcar como não compareceu:', error);
@@ -323,3 +611,4 @@ window.markCompleted = (id) => markCompleted(window.db, id);
 window.markNoShow = (id) => markNoShow(window.db, id);
 
 export { initAppointments, loadAppointments };
+

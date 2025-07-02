@@ -275,11 +275,12 @@ async function loadAvailableTimes(barberId, date) {
         }
 
         const selectedDate = new Date(date + 'T00:00:00-03:00');
-        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        console.log('selectedDate (com fuso horário):', selectedDate.toISOString());
+        const daysOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
         const dayOfWeek = daysOfWeek[selectedDate.getDay()];
-        console.log('Dia selecionado:', date, dayOfWeek, 'Barbeiro:', barberId);
+        console.log('Dia da semana calculado:', dayOfWeek);
 
-        console.log('Buscando horários do barbeiro...');
+        console.log('Buscando horários do barbeiro para barberId:', barberId, 'e dayOfWeek:', dayOfWeek);
         const schedulesQuery = query(
             collection(db, 'schedules'),
             where('barberId', '==', barberId),
@@ -287,10 +288,14 @@ async function loadAvailableTimes(barberId, date) {
         );
         const schedulesSnapshot = await getDocs(schedulesQuery);
         let schedule = null;
-        schedulesSnapshot.forEach((docSnapshot) => {
-            schedule = docSnapshot.data();
-        });
-        console.log('Horário encontrado:', schedule);
+        if (!schedulesSnapshot.empty) {
+            schedulesSnapshot.forEach((docSnapshot) => {
+                schedule = docSnapshot.data();
+                console.log('Horário encontrado no Firestore:', schedule);
+            });
+        } else {
+            console.log('Nenhum horário encontrado no Firestore para', barberId, dayOfWeek);
+        }
 
         if (!schedule) {
             console.log('Nenhum horário disponível para', barberId, dayOfWeek);
@@ -298,7 +303,7 @@ async function loadAvailableTimes(barberId, date) {
             return;
         }
 
-        console.log('Buscando agendamentos confirmados...');
+        console.log('Buscando agendamentos confirmados para barberId:', barberId, 'e date:', date);
         const appointmentsQuery = query(
             collection(db, 'appointments'),
             where('barberId', '==', barberId),
@@ -318,13 +323,22 @@ async function loadAvailableTimes(barberId, date) {
 
         const selectedServices = JSON.parse(sessionStorage.getItem('selectedServices') || '[]');
         const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
+        console.log('Serviços selecionados:', selectedServices);
+        console.log('Duração total dos serviços selecionados:', totalDuration);
         if (totalDuration === 0) {
-            console.log('Nenhum serviço selecionado');
+            console.log('Nenhum serviço selecionado ou duração total zero.');
             timeSlots.innerHTML = '<p>Selecione pelo menos um serviço.</p>';
             return;
         }
 
-        console.log('Gerando horários disponíveis...');
+        console.log('Chamando generateTimeSlots com:', {
+            startTime: schedule.startTime,
+            endTime: schedule.endTime,
+            breakStart: schedule.breakStart,
+            breakEnd: schedule.breakEnd,
+            bookedSlots: bookedSlots,
+            totalDuration: totalDuration
+        });
         const availableTimes = generateTimeSlots(
             schedule.startTime,
             schedule.endTime,
@@ -334,10 +348,10 @@ async function loadAvailableTimes(barberId, date) {
             15,
             totalDuration
         );
-        console.log('Horários disponíveis:', availableTimes);
+        console.log('Horários disponíveis gerados:', availableTimes);
 
         if (availableTimes.length === 0) {
-            console.log('Nenhum horário disponível após filtros');
+            console.log('Nenhum horário disponível após filtros ou geração.');
             timeSlots.innerHTML = '<p>Nenhum horário disponível.</p>';
             return;
         }
@@ -460,12 +474,11 @@ async function loadAppointments() {
                 const twoHoursBefore = new Date(apptDateTime.getTime() - 2 * 60 * 60 * 1000); // 2 horas antes
                 console.log('Data do agendamento:', apptDateTime, 'Agora:', now, '2 horas antes:', twoHoursBefore);
                 if (now < twoHoursBefore) {
-                    action = `<button class="action-btn cancel-btn" data-id="${docData.id}">Cancelar</button>`;
+                    action = `<button class="action-btn btn-cancel" data-id="${docData.id}" title="Cancelar agendamento"><i class="fas fa-times"></i></button>`;
                     actionMessage = '';
                 } else {
                     action = '';
                     actionMessage = 'Prazo de cancelamento expirado. Contate a barbearia.';
-                    showPopup('O prazo de cancelamento (2 horas antes) expirou. Por favor, contate a barbearia para desbloqueio.');
                 }
             } else if (docData.status === 'completed') {
                 console.log('Agendamento realizado, verificando feedback...');
@@ -495,7 +508,7 @@ async function loadAppointments() {
                     action = '';
                     actionMessage = `Feedback: ${feedbackText}`;
                 } else {
-                    action = `<button class="action-btn feedback-btn" data-id="${docData.id}">Avaliar</button>`;
+                    action = `<button class="action-btn btn-feedback" data-id="${docData.id}" title="Avaliar serviço"><i class="fas fa-star"></i></button>`;
                     actionMessage = '';
                 }
             } else {
@@ -506,15 +519,16 @@ async function loadAppointments() {
 
             console.log('Criando card de agendamento...');
             const card = document.createElement('div');
-            card.className = 'appointment-card';
+            card.className = 'card';
             card.innerHTML = `
-                <p><strong>Barbeiro:</strong> ${barberName}</p>
-                <p><strong>Serviços:</strong> ${services}</p>
-                <p><strong>Data:</strong> ${formattedDate}</p>
-                <p><strong>Horário:</strong> ${docData.time}</p>
-                <p><strong>Valor:</strong> R$${docData.totalPrice.toFixed(2)}</p>
-                <p><strong>Status:</strong> ${statusPt}${actionMessage ? ` - ${actionMessage}` : ''}</p>
-                <div class="appointment-actions" style="display: ${action ? 'flex' : 'none'}">
+                <div class="card-info">
+                    <h4><i class="fas fa-calendar-check"></i> ${services}</h4>
+                    <p><strong>Barbeiro:</strong> ${barberName}</p>
+                    <p><strong>📅 ${formattedDate}</strong> • <strong>🕐 ${docData.time}</strong></p>
+                    <p><strong>💵 R$ ${docData.totalPrice.toFixed(2)}</strong> • <strong>Status:</strong> ${statusPt}</p>
+                    ${actionMessage ? `<p><em>${actionMessage}</em></p>` : ''}
+                </div>
+                <div class="card-actions" style="display: ${action ? 'flex' : 'none'}">
                     ${action}
                 </div>
             `;
@@ -523,7 +537,7 @@ async function loadAppointments() {
         }
 
         console.log('Configurando eventos dos botões...');
-        document.querySelectorAll('.cancel-btn').forEach(btn => {
+        document.querySelectorAll('.btn-cancel').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const confirmed = await showPopup('Deseja cancelar este agendamento?', true);
                 if (confirmed) {
@@ -540,7 +554,7 @@ async function loadAppointments() {
             });
         });
 
-        document.querySelectorAll('.feedback-btn').forEach(btn => {
+        document.querySelectorAll('.btn-feedback').forEach(btn => {
             btn.addEventListener('click', () => {
                 console.log('Abrindo feedback para agendamento ID:', btn.dataset.id);
                 sessionStorage.setItem('appointmentId', btn.dataset.id);

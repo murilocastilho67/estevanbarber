@@ -8,11 +8,16 @@ export async function initServices(db) {
     console.log('Inicializando eventos de serviços...');
     window.db = db;
     await loadBarbersForSelect(db); // Garante que o select seja carregado
-    const serviceForm = document.getElementById('serviceForm');
+    const serviceForm = document.getElementById("serviceForm");
     if (serviceForm && !isServiceFormInitialized) {
-        serviceForm.addEventListener('submit', (event) => addOrUpdateService(db, event));
+        serviceForm.addEventListener("submit", (event) => addOrUpdateService(db, event));
         isServiceFormInitialized = true; // Marca como inicializado
     }
+    // Recarrega o select de barbeiros sempre que a seção de serviços é ativada
+    document.getElementById("nav-services").addEventListener("click", async () => {
+        await loadBarbersForSelect(db);
+        await loadServices(db);
+    });
     document.getElementById('servicesList').addEventListener('click', handleServiceActions);
 }
 
@@ -71,18 +76,18 @@ export async function loadServices(db) {
             const icon = '✂️'; // [PRINT] Fixa a tesoura como ícone padrão pra todos os serviços
             if (!displayedServiceIds.has(docSnapshot.id)) { // Validação pra evitar duplicação
                 displayedServiceIds.add(docSnapshot.id); // Marca o ID como exibido
-                const card = document.createElement('div');
-                card.className = 'service-card';
-                card.setAttribute('data-id', docSnapshot.id);
+                const card = document.createElement("div");
+                card.className = "card"; // Usando a classe 'card' para padronização
+                card.setAttribute("data-id", docSnapshot.id);
                 card.innerHTML = `
-                    <div class="service-info">
-                        <h4>${icon} ${service.name}</h4> <!-- [PRINT] Tesoura aparece aqui pra todos os serviços -->
+                    <div class="card-info">
+                        <h4>${icon} ${service.name}</h4>
                         <p>Barbeiro: ${barberName}</p>
                         <p><strong>💵 R$ ${service.price.toFixed(2)}</strong> • ⏱️ ${service.duration} min</p>
                     </div>
-                    <div class="service-actions">
-                        <button class="btn btn-outline-secondary btn-sm edit-service" title="Editar serviço"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-danger btn-sm delete-service" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
+                    <div class="card-actions">
+                        <button class="action-btn btn-edit" data-id="${docSnapshot.id}" title="Editar serviço"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn btn-delete" data-id="${docSnapshot.id}" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 `;
                 servicesList.appendChild(card);
