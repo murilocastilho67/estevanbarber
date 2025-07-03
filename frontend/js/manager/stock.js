@@ -25,10 +25,12 @@ async function loadStockMovements(db) {
 
         const productsSnapshot = await getDocs(collection(db, 'stock'));
         const productMap = {};
-        productsSnapshot.forEach((docSnapshot) => {
-            const product = docSnapshot.data();
-            productMap[product.id] = product.name;
-        });
+        if (!productsSnapshot.empty) {
+            productsSnapshot.forEach((docSnapshot) => {
+                const product = docSnapshot.data();
+                productMap[product.id] = product.name;
+            });
+        }
 
         let movementsQuery = query(collection(db, 'stock_movements'), orderBy('timestamp', 'desc'));
         const movementsSnapshot = await getDocs(movementsQuery);
@@ -47,19 +49,21 @@ async function loadStockMovements(db) {
             const unitPrice = movement.type === 'exit' && movement.unitPrice != null ? (typeof movement.unitPrice === 'string' ? parseFloat(movement.unitPrice) : movement.unitPrice) : null;
             const profit = movement.type === 'exit' && movement.profit != null ? (typeof movement.profit === 'string' ? parseFloat(movement.profit) : movement.profit) : null;
 
-            const card = document.createElement('div');
-            card.className = 'movement-card';
+            const card = document.createElement("div");
+            card.className = "card"; // Usando a classe card padronizada
             card.innerHTML = `
-                <p><strong>Produto:</strong> ${productName}</p>
-                <p><strong>Tipo:</strong> ${movement.type === 'entry' ? 'Entrada' : 'Saída'}</p>
-                <p><strong>Data:</strong> ${formattedDate}</p>
-                <p><strong>Quantidade:</strong> ${movement.quantity}</p>
-                <p><strong>Custo por Unidade:</strong> R$${isNaN(unitCost) ? '0.00' : unitCost.toFixed(2)}</p>
-                ${movement.type === 'exit' ? `
-                    <p><strong>Valor de Venda:</strong> R$${isNaN(unitPrice) ? '0.00' : unitPrice.toFixed(2)}</p>
-                    <p><strong>Lucro:</strong> R$${isNaN(profit) ? '0.00' : profit.toFixed(2)}</p>
-                ` : ''}
-                <p><strong>Motivo:</strong> ${movement.reason}</p>
+                <div class="card-info">
+                    <h4><i class="fas fa-exchange-alt"></i> ${productName}</h4>
+                    <p><strong>Tipo:</strong> ${movement.type === "entry" ? "Entrada" : "Saída"}</p>
+                    <p><strong>Data:</strong> ${formattedDate}</p>
+                    <p><strong>Quantidade:</strong> ${movement.quantity}</p>
+                    <p><strong>Custo por Unidade:</strong> R$${isNaN(unitCost) ? "0.00" : unitCost.toFixed(2)}</p>
+                    ${movement.type === "exit" ? `
+                        <p><strong>Valor de Venda:</strong> R$${isNaN(unitPrice) ? "0.00" : unitPrice.toFixed(2)}</p>
+                        <p><strong>Lucro:</strong> R$${isNaN(profit) ? "0.00" : profit.toFixed(2)}</p>
+                    ` : ""}
+                    <p><strong>Motivo:</strong> ${movement.reason}</p>
+                </div>
             `;
             stockMovementsList.appendChild(card);
         });
@@ -98,23 +102,23 @@ async function loadStockProducts(db) {
                 const value = product.quantity * product.averageCost;
                 totalValue += value;
 
-                const card = document.createElement('div');
-                card.className = 'stock-card';
+                const card = document.createElement("div");
+                card.className = "card"; // Usando a classe card padronizada
                 card.innerHTML = `
-                    <div class="stock-info">
-                        <h4>${product.name}</h4>
-                        <p>Quantidade: ${product.quantity}</p>
-                        <p>Custo Médio: R$${product.averageCost.toFixed(2)}</p>
-                        <p>Valor de Venda: R$${product.sellingPrice.toFixed(2)}</p>
-                        <p>Valor Total (Custo): R$${value.toFixed(2)}</p>
-                        <p>Fornecedor: ${product.supplier || 'Não informado'}</p>
-                        <p>Categoria: ${product.category || 'Não informado'}</p>
+                    <div class="card-info">
+                        <h4><i class="fas fa-box"></i> ${product.name}</h4>
+                        <p><strong>Quantidade:</strong> ${product.quantity}</p>
+                        <p><strong>Custo Médio:</strong> R$${product.averageCost.toFixed(2)}</p>
+                        <p><strong>Valor de Venda:</strong> R$${product.sellingPrice.toFixed(2)}</p>
+                        <p><strong>Valor Total (Custo):</strong> R$${value.toFixed(2)}</p>
+                        <p><strong>Fornecedor:</strong> ${product.supplier || "Não informado"}</p>
+                        <p><strong>Categoria:</strong> ${product.category || "Não informado"}</p>
                     </div>
-                    <div class="stock-actions">
-                        <button class="action-btn stock-entry" data-id="${docSnapshot.id}" data-average-cost="${product.averageCost}">Entrada</button>
-                        <button class="action-btn stock-exit" data-id="${docSnapshot.id}" data-average-cost="${product.averageCost}" data-selling-price="${product.sellingPrice}" ${product.quantity === 0 ? 'disabled' : ''}>Saída</button>
-                        <button class="action-btn edit-stock" data-id="${docSnapshot.id}">Editar</button>
-                        <button class="action-btn delete-stock" data-id="${docSnapshot.id}" ${product.quantity > 0 ? 'disabled' : ''}>Excluir</button>
+                    <div class="card-actions">
+                        <button class="action-btn btn-entry" data-id="${docSnapshot.id}" data-average-cost="${product.averageCost}" title="Registrar Entrada"><i class="fas fa-plus"></i></button>
+                        <button class="action-btn btn-exit" data-id="${docSnapshot.id}" data-average-cost="${product.averageCost}" data-selling-price="${product.sellingPrice}" ${product.quantity === 0 ? "disabled" : ""} title="Registrar Saída"><i class="fas fa-minus"></i></button>
+                        <button class="action-btn btn-edit" data-id="${docSnapshot.id}" title="Editar Produto"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn btn-delete" data-id="${docSnapshot.id}" ${product.quantity > 0 ? "disabled" : ""} title="Excluir Produto"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
                 stockList.appendChild(card);
@@ -122,63 +126,61 @@ async function loadStockProducts(db) {
 
             totalStockValue.textContent = totalValue.toFixed(2);
         }
-
-        document.querySelectorAll('.stock-entry').forEach(btn => {
-            btn.addEventListener('click', () => {
+        document.querySelectorAll(".btn-entry").forEach(btn => {
+            btn.addEventListener("click", () => {
                 const productId = btn.dataset.id;
                 const averageCost = parseFloat(btn.dataset.averageCost);
-                showStockMovementPopup('Registrar Entrada', 'entry', productId, averageCost);
+                showStockMovementPopup("Registrar Entrada", "entry", productId, averageCost);
             });
         });
 
-        document.querySelectorAll('.stock-exit').forEach(btn => {
-            btn.addEventListener('click', () => {
+        document.querySelectorAll(".btn-exit").forEach(btn => {
+            btn.addEventListener("click", () => {
                 const productId = btn.dataset.id;
                 const averageCost = parseFloat(btn.dataset.averageCost);
                 const sellingPrice = parseFloat(btn.dataset.sellingPrice);
-                showStockMovementPopup('Registrar Saída', 'exit', productId, averageCost, sellingPrice);
+                showStockMovementPopup("Registrar Saída", "exit", productId, averageCost, sellingPrice);
             });
         });
 
-        document.querySelectorAll('.edit-stock').forEach(btn => {
-            btn.addEventListener('click', async () => {
+        document.querySelectorAll(".btn-edit").forEach(btn => {
+            btn.addEventListener("click", async () => {
                 const productId = btn.dataset.id;
                 try {
-                    const productDoc = await getDoc(doc(db, 'stock', productId));
+                    const productDoc = await getDoc(doc(db, "stock", productId));
                     if (productDoc.exists()) {
                         const product = productDoc.data();
-                        document.getElementById('productId').value = productId;
-                        document.getElementById('productName').value = product.name;
-                        document.getElementById('costPrice').value = product.averageCost;
-                        document.getElementById('sellingPrice').value = product.sellingPrice;
-                        document.getElementById('supplier').value = product.supplier || '';
-                        document.getElementById('category').value = product.category || 'Higiene';
-                        document.getElementById('stockForm').querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
+                        document.getElementById("productId").value = productId;
+                        document.getElementById("productName").value = product.name;
+                        document.getElementById("costPrice").value = product.averageCost;
+                        document.getElementById("sellingPrice").value = product.sellingPrice;
+                        document.getElementById("supplier").value = product.supplier || "";
+                        document.getElementById("category").value = product.category || "Higiene";
+                        document.getElementById("stockForm").querySelector("button[type=\"submit\"]").textContent = "Salvar Alterações";
                     }
                 } catch (error) {
-                    console.error('Erro ao carregar produto para edição:', error);
-                    showPopup('Erro ao carregar produto para edição: ' + error.message);
+                    console.error("Erro ao carregar produto para edição:", error);
+                    showPopup("Erro ao carregar produto para edição: " + error.message);
                 }
             });
         });
 
-        document.querySelectorAll('.delete-stock').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const confirmed = await showPopup('Excluir produto do estoque?', true);
+        document.querySelectorAll(".btn-delete").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const confirmed = await showPopup("Excluir produto do estoque?", true);
                 if (confirmed) {
                     try {
-                        await deleteDoc(doc(db, 'stock', btn.dataset.id));
-                        console.log('Produto excluído:', btn.dataset.id);
+                        await deleteDoc(doc(db, "stock", btn.dataset.id));
+                        console.log("Produto excluído:", btn.dataset.id);
                         loadStockProducts(db);
-                        showPopup('Produto excluído com sucesso!');
+                        showPopup("Produto excluído com sucesso!");
                     } catch (error) {
-                        console.error('Erro ao excluir produto:', error);
-                        showPopup('Erro ao excluir produto: ' + error.message);
+                        console.error("Erro ao excluir produto:", error);
+                        showPopup("Erro ao excluir produto: " + error.message);
                     }
                 }
             });
-        });
-    } catch (error) {
+        });    } catch (error) {
         console.error('Erro ao carregar produtos:', error);
         showPopup('Erro ao carregar produtos: ' + error.message);
     }

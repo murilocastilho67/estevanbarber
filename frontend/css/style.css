@@ -386,21 +386,21 @@ a:hover {
     cursor: not-allowed;
 }
 
-.card-actions .btn-stock-entry {
+.card-actions .btn-entry {
     background-color: #5cb85c;
     color: #fff;
 }
 
-.card-actions .btn-stock-entry:hover {
+.card-actions .btn-entry:hover {
     background-color: #4cae4c;
 }
 
-.card-actions .btn-stock-exit {
+.card-actions .btn-exit {
     background-color: #f0ad4e;
     color: #fff;
 }
 
-.card-actions .btn-stock-exit:hover {
+.card-actions .btn-exit:hover {
     background-color: #ec971f;
 }
 
