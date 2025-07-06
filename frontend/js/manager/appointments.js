@@ -1,8 +1,9 @@
 import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction, addDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-import { showPopup, showSection } from './utils.js';
+import { showPopup, showSection, getFirestoreDb } from './utils.js';
 import { loadBarbersForSelect } from './services.js';
+import { registerRevenue } from './cashflow_new.js';
 
-async function createServiceRevenue(db, appointment) {
+async function createServiceRevenue(db, appointment ) {
     const { totalPrice, id: appointmentId, services } = appointment;
     const cashFlowData = {
         id: `cf_${Date.now()}`,
@@ -18,8 +19,13 @@ async function createServiceRevenue(db, appointment) {
     console.log('Receita de serviço criada:', cashFlowData);
 }
 
-function initAppointments(db) {
-    console.log('Inicializando eventos de agendamentos...');
+function initAppointments() {
+    console.log("Inicializando eventos de agendamentos...");
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em initAppointments");
+        return;
+    }
     
     const navAppointments = document.getElementById('nav-appointments');
     if (navAppointments) {
@@ -28,7 +34,7 @@ function initAppointments(db) {
             console.log('Clicou em Agendamentos');
             showSection("appointments-section");
             await loadBarbersForSelect(db); // Carrega os barbeiros para o filtro
-            loadAppointments(db);
+            loadAppointments();
         });
     } else {
         console.error('Elemento nav-appointments não encontrado');
@@ -38,7 +44,7 @@ function initAppointments(db) {
     if (barberFilter) {
         barberFilter.addEventListener('change', (e) => {
             const date = document.getElementById('dateFilter').value;
-            loadAppointments(db, e.target.value, date);
+            loadAppointments(e.target.value, date);
         });
     } else {
         console.error('Elemento barberFilter não encontrado');
@@ -48,17 +54,21 @@ function initAppointments(db) {
     if (dateFilter) {
         dateFilter.addEventListener('change', (e) => {
             const barberId = document.getElementById('barberFilter').value;
-            loadAppointments(db, barberId, e.target.value);
+            loadAppointments(barberId, e.target.value);
         });
     } else {
         console.error('Elemento dateFilter não encontrado');
     }
 }
 
-async function loadAppointments(db, barberId = 'all', date = '') {
+async function loadAppointments(barberId = 'all', date = '') {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em loadAppointments");
+        return;
+    }
     try {
         console.log('Iniciando loadAppointments com filtros:', { barberId, date });
-        if (!db) throw new Error('Firestore não inicializado');
 
         const appointmentsList = document.getElementById('appointmentsList');
         appointmentsList.innerHTML = '';
@@ -213,7 +223,7 @@ async function loadAppointments(db, barberId = 'all', date = '') {
                     const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
                     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
 
-                    await setDoc(doc(db, 'appointments', apptId), { reminderSent: true }, { merge: true });
+                    await setDoc(doc(db, 'appointments', apptId ), { reminderSent: true }, { merge: true });
 
                     btn.innerHTML = '<i class="fab fa-whatsapp"></i>';
                     btn.title = 'Lembrete já enviado';
@@ -243,7 +253,12 @@ async function loadAppointments(db, barberId = 'all', date = '') {
     }
 }
 
-async function cancelAppointment(db, id) {
+async function cancelAppointment(id) {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em cancelAppointment");
+        return;
+    }
     const confirmed = await showPopup('Cancelar agendamento?', true);
     if (confirmed) {
         try {
@@ -253,7 +268,7 @@ async function cancelAppointment(db, id) {
             // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
-            await loadAppointments(db, barberId, date);
+            await loadAppointments(barberId, date);
             
             showPopup('Agendamento cancelado com sucesso!');
         } catch (error) {
@@ -263,7 +278,12 @@ async function cancelAppointment(db, id) {
     }
 }
 
-async function markCompleted(db, id) {
+async function markCompleted(id) {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em markCompleted");
+        return;
+    }
     const confirmed = await showPopup('Marcar agendamento como concluído?', true);
     if (confirmed) {
         try {
@@ -275,8 +295,31 @@ async function markCompleted(db, id) {
                 const appt = apptSnap.data();
                 transaction.set(apptRef, { status: 'completed' }, { merge: true });
 
+                // Registrar receita no fluxo de caixa apenas se não estava concluído antes
                 if (appt.status !== 'completed') {
-                    await createServiceRevenue(db, { ...appt, id });
+                    try {
+                        const services = appt.services || [];
+                        const serviceNames = services.map(s => s.name).join(', ');
+                        
+                        await registerRevenue(db,
+                            `Serviços realizados: ${serviceNames}`,
+                            appt.totalPrice || 0,
+                            'services',
+                            'appointment_completed',
+                            {
+                                appointmentId: id,
+                                services: services,
+                                barberId: appt.barberId,
+                                userId: appt.userId,
+                                date: appt.date,
+                                time: appt.time
+                            }
+                        );
+                        console.log('💰 Receita de serviço registrada no fluxo de caixa');
+                    } catch (cashflowError) {
+                        console.warn('⚠️ Erro ao registrar receita no fluxo de caixa:', cashflowError);
+                        // Não interromper o processo se houver erro no fluxo de caixa
+                    }
                 }
             });
             console.log('Agendamento marcado como concluído:', id);
@@ -284,17 +327,21 @@ async function markCompleted(db, id) {
             // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
-            await loadAppointments(db, barberId, date);
-            
+            loadAppointments(barberId, date);
             showPopup('Agendamento marcado como concluído!');
         } catch (error) {
-            console.error('Erro ao marcar como concluído:', error);
-            showPopup('Erro ao marcar como concluído: ' + error.message);
+            console.error('Erro ao marcar agendamento como concluído:', error);
+            showPopup('Erro ao marcar agendamento como concluído: ' + error.message);
         }
     }
 }
 
-async function markNoShow(db, id) {
+async function markNoShow(id) {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em markNoShow");
+        return;
+    }
     const confirmed = await showPopup('Marcar agendamento como não compareceu?', true);
     if (confirmed) {
         try {
@@ -304,7 +351,7 @@ async function markNoShow(db, id) {
             // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
-            await loadAppointments(db, barberId, date);
+            await loadAppointments(barberId, date);
             
             showPopup('Agendamento marcado como não compareceu!');
         } catch (error) {
@@ -314,9 +361,8 @@ async function markNoShow(db, id) {
     }
 }
 
-window.cancelAppointment = (id) => cancelAppointment(window.db, id);
-window.markCompleted = (id) => markCompleted(window.db, id);
-window.markNoShow = (id) => markNoShow(window.db, id);
+window.cancelAppointment = (id) => cancelAppointment(id);
+window.markCompleted = (id) => markCompleted(id);
+window.markNoShow = (id) => markNoShow(id);
 
 export { initAppointments, loadAppointments };
-

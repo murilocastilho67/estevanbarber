@@ -1,11 +1,11 @@
 import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { showPopup, showSection } from './utils.js';
+import { showPopup, showSection, setFirestoreDb, getFirestoreDb } from './utils.js';
 import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js';
 import { initSchedules } from './schedules.js';
 import { initStockModule, loadProducts, loadMovements } from './stock_new.js';
-import { initCashFlow, loadCashFlowSummary } from './cashflow.js';
+import { initCashFlow, loadCashFlowSummary } from './cashflow_new.js';
 import { initDashboard } from './dashboard.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -15,7 +15,6 @@ console.log('manager.js carregado - Versão: 2025-06-09' );
 
 const auth = getAuth();
 console.log('Auth inicializado:', !!auth);
-let db = window.db;
 let isInitialized = false;
 let isBarbersLoaded = false;
 
@@ -25,7 +24,7 @@ function waitForFirestore() {
         let attempts = 0;
         const checkDb = setInterval(() => {
             attempts++;
-            db = window.db;
+            const db = getFirestoreDb(); // Obter a instância do db
             if (db) {
                 clearInterval(checkDb);
                 console.log('Firestore inicializado com sucesso');
@@ -129,22 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }, 100);
                     } else {
-                        const sectionId = link.id.replace('nav-', '') + '-section';
+                        const sectionId = link.id.replace("nav-", "") + "-section";
                         showSection(sectionId);
 
-                        // Carregamento específico das seções
-                        if (sectionId === 'stock-section') {
-                            // A nova interface de estoque é carregada automaticamente
-                            console.log('🔄 Acessando seção de estoque');
-                        } else if (sectionId === 'barbers-section' && !isBarbersLoaded) {
-                            await loadBarbers(db);
+                        // Carregamento específico para cada seção
+                        if (sectionId === "cashflow-section") {
+                            loadCashFlowData();
+                        } else if (sectionId === "barbers-section" && !isBarbersLoaded) {
+                            await loadBarbers();
                             isBarbersLoaded = true;
-                        } else if (sectionId === 'services-section') {
-                            await loadServices(db);
-                        } else if (sectionId === 'appointments-section') {
-                            await loadAppointments(db);
-                        } else if (sectionId === 'schedules-section') {
-                            await loadServiceBarbers(db);
+                        } else if (sectionId === "services-section") {
+                            await loadServices();
+                        } else if (sectionId === "appointments-section") {
+                            await loadAppointments();
+                        } else if (sectionId === "schedules-section") {
+                            await loadServiceBarbers();
                         }
                     }
 
@@ -173,20 +171,23 @@ auth.onAuthStateChanged((user) => {
     }
     console.log("DEBUG: Usuário autenticado:", user.email);
     if (!isInitialized) {
-        waitForFirestore().then((dbInstance) => {
-            window.db = dbInstance;
-            console.log("DEBUG: Firestore instance (db) disponível no window.db:", !!window.db);
-            initBarbers(dbInstance);
-            initServices(dbInstance);
-            initAppointments(dbInstance);
-            initSchedules(dbInstance);
-            initStockModule(dbInstance);
-            initCashFlow(dbInstance);
-            initDashboard(dbInstance);
-            loadBarbers(dbInstance);
-            loadServices(dbInstance);
-            loadAppointments(dbInstance);
-            loadServiceBarbers(dbInstance);
+        const app = initializeApp(firebaseConfig);
+        const dbInstance = getFirestore(app);
+        setFirestoreDb(dbInstance); // Definir a instância do db globalmente
+
+        waitForFirestore().then((db) => {
+            console.log("DEBUG: Firestore instance (db) disponível no window.db:", !!db);
+            initBarbers(db);
+            initServices(db);
+            initAppointments(db);
+            initSchedules(db);
+            initStockModule(db);
+            initCashFlow(db);
+            initDashboard(db);
+            loadBarbers(db);
+            loadServices(db);
+            loadAppointments(db);
+            loadServiceBarbers(db);
             showSection("appointments-section");
             isInitialized = true;
             isBarbersLoaded = true;

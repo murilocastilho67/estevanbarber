@@ -19,7 +19,7 @@
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
-        console.log('Inicializando Firebase com config:', firebaseConfig );
+        console.log('Inicializando Firebase com config:', firebaseConfig);
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -207,6 +207,20 @@
                     </button>
                 </div>
 
+                <!-- Filtros de produtos -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="product-category-filter">Filtrar por Categoria:</label>
+                        <select id="product-category-filter">
+                            <option value="all">Todas as categorias</option>
+                            <option value="Higiene">Higiene</option>
+                            <option value="Estilização">Estilização</option>
+                            <option value="Barba">Barba</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Formulário de cadastro/edição de produto -->
                 <div id="product-form-container" class="form-container" style="display: none;">
                     <form id="product-form">
@@ -334,56 +348,150 @@
                     </div>
                 </form>
             </div>
-        </div>         </select>
-                        <input type="date" id="cashFlowStartDate" style="display: none;">
-                        <input type="date" id="cashFlowEndDate" style="display: none;">
-                        <label for="cashFlowTypeFilter">Tipo:</label>
-                        <select id="cashFlowTypeFilter">
+        </div>
+
+        <!-- Seção de Fluxo de Caixa -->
+        <div id="cashflow-section" class="section">
+            <h2>Fluxo de Caixa</h2>
+            
+            <!-- Navegação do Fluxo de Caixa -->
+            <div class="stock-nav">
+                <button id="cashflow-nav-summary" class="nav-btn active">Resumo Financeiro</button>
+                <button id="cashflow-nav-expenses" class="nav-btn">Cadastrar Despesa</button>
+            </div>
+
+            <!-- Seção de Resumo Financeiro -->
+            <div id="cashflow-summary-view" class="stock-view active">
+                <div class="stock-header">
+                    <h3>Resumo Financeiro</h3>
+                </div>
+
+                <!-- Filtros do Fluxo de Caixa -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="cashflow-period-filter">Período:</label>
+                        <select id="cashflow-period-filter">
+                            <option value="today">Hoje</option>
+                            <option value="week">Esta Semana</option>
+                            <option value="month" selected>Este Mês</option>
+                            <option value="year">Este Ano</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" id="custom-date-filters" style="display: none;">
+                        <label for="cashflow-start-date">De:</label>
+                        <input type="date" id="cashflow-start-date">
+                        <label for="cashflow-end-date">Até:</label>
+                        <input type="date" id="cashflow-end-date">
+                    </div>
+                    <div class="filter-group">
+                        <label for="cashflow-type-filter">Tipo:</label>
+                        <select id="cashflow-type-filter">
                             <option value="all">Todos</option>
                             <option value="revenue">Receitas</option>
                             <option value="expense">Despesas</option>
                         </select>
                     </div>
                 </div>
-                <div class="cashflow-charts">
-                    <canvas id="cashFlowChart"></canvas>
+
+                <!-- Resumo de Valores -->
+                <div class="cashflow-summary">
+                    <div class="summary-card revenue">
+                        <div class="summary-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h4>Receitas</h4>
+                            <span class="summary-value" id="total-revenue">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="summary-card expense">
+                        <div class="summary-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h4>Despesas</h4>
+                            <span class="summary-value" id="total-expenses">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="summary-card balance">
+                        <div class="summary-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h4>Saldo</h4>
+                            <span class="summary-value" id="total-balance">R$ 0,00</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="cashflow-transactions-list">
+
+                <!-- Gráfico -->
+                <div class="cashflow-chart-container">
+                    <canvas id="cashflow-chart"></canvas>
+                </div>
+
+                <!-- Lista de Transações -->
+                <div class="cashflow-transactions">
                     <h3>Transações Detalhadas</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Descrição</th>
-                                <th>Origem</th>
-                                <th>Valor</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cashFlowTransactionsTableBody"></tbody>
-                    </table>
+                    <div id="cashflow-transactions-list" class="transactions-grid">
+                        <!-- Transações serão carregadas aqui -->
+                    </div>
                 </div>
             </div>
-            <div id="cashflow-fixed-expense-section" class="subsection" style="display: none;">
-                <h3>Registrar Nova Despesa</h3>
-                <form id="newExpenseForm">
-                    <label for="expenseAmount">Valor (R$):</label>
-                    <input type="number" id="expenseAmount" step="0.01" required>
-                    <label for="expenseDescription">Descrição:</label>
-                    <input type="text" id="expenseDescription" required>
-                    <label for="expenseCategory">Categoria:</label>
-                    <select id="expenseCategory">
-                        <option value="operational_expense">Operacional</option>
-                        <option value="rent">Aluguel</option>
-                        <option value="salary">Salários</option>
-                        <option value="utility_bill">Contas de Consumo</option>
-                        <option value="marketing">Marketing</option>
-                        <option value="other">Outros</option>
-                    </select>
-                    <label for="expenseDate">Data:</label>
-                    <input type="date" id="expenseDate" required>
-                    <button type="submit">Registrar Despesa</button>
-                </form>
+
+            <!-- Seção de Cadastro de Despesas -->
+            <div id="cashflow-expenses-view" class="stock-view">
+                <div class="stock-header">
+                    <h3>Cadastrar Despesa</h3>
+                </div>
+
+                <!-- Formulário de Despesa -->
+                <div class="form-container">
+                    <form id="expense-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-description">Descrição *</label>
+                                <input type="text" id="expense-description" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-category">Categoria *</label>
+                                <select id="expense-category" required>
+                                    <option value="">Selecione uma categoria</option>
+                                    <option value="rent">Aluguel</option>
+                                    <option value="utilities">Contas (Luz, Água, Internet)</option>
+                                    <option value="salaries">Salários</option>
+                                    <option value="supplies">Materiais e Suprimentos</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="maintenance">Manutenção</option>
+                                    <option value="taxes">Impostos</option>
+                                    <option value="other">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-amount">Valor (R$) *</label>
+                                <input type="number" id="expense-amount" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-date">Data *</label>
+                                <input type="date" id="expense-date" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="cancel-expense-btn" class="btn-secondary">Cancelar</button>
+                            <button type="submit" id="save-expense-btn" class="btn-primary">Registrar Despesa</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Despesas Recentes -->
+                <div class="recent-expenses">
+                    <h3>Despesas Recentes</h3>
+                    <div id="recent-expenses-list" class="expenses-grid">
+                        <!-- Despesas recentes serão carregadas aqui -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -429,9 +537,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/manager/manager.js"></script>
     <script>
-        if (
-            'WebSocket' in window
-         ) {
+        if ('WebSocket' in window) {
             (function () {
                 function refreshCSS() {
                     var sheets = [].slice.call(document.getElementsByTagName("link"));
@@ -441,33 +547,29 @@
                         var parent = elem.parentElement || head;
                         parent.removeChild(elem);
                         var rel = elem.rel;
-                        if (
-                            elem.href &&
-                            typeof rel != "string" ||
-                            rel.length == 0 ||
-                            rel.toLowerCase() == "stylesheet"
-                        ) {
-                            var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, "");
-                            elem.href = url + (url.indexOf("?") >= 0 ? "&" : "?") + "_cacheOverride=" + new Date().valueOf();
+                        if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+                            var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+                            elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
                         }
                         parent.appendChild(elem);
                     }
                 }
-                var protocol = window.location.protocol === "http:" ? "ws://" : "wss://";
-                var address = protocol + window.location.host + window.location.pathname + "/ws";
-                var socket = new WebSocket(address );
+                var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+                var address = protocol + window.location.host + window.location.pathname + '/ws';
+                var socket = new WebSocket(address);
                 socket.onmessage = function (msg) {
-                    if (msg.data == "reload") window.location.reload();
-                    else if (msg.data == "refreshcss") refreshCSS();
+                    if (msg.data == 'reload') window.location.reload();
+                    else if (msg.data == 'refreshcss') refreshCSS();
                 };
-                if (sessionStorage && !sessionStorage.getItem("IsThisFirstTime_Log_From_LiveServer")) {
-                    console.log("Live reload enabled.");
-                    sessionStorage.setItem("IsThisFirstTime_Log_From_LiveServer", true);
+                if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+                    console.log('Live reload enabled.');
+                    sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
                 }
             })();
         } else {
-            console.error("Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.");
+            console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
         }
     </script>
 </body>
 </html>
+

@@ -11,7 +11,8 @@ import {
     runTransaction, 
     addDoc 
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-import { showPopup } from './utils.js';
+import { showPopup, getFirestoreDb } from './utils.js';
+import { registerRevenue, registerExpense } from './cashflow_new.js';
 
 // Estado global do módulo de estoque
 const stockState = {
@@ -23,16 +24,17 @@ const stockState = {
 };
 
 // Inicialização do módulo de estoque
-export function initStockModule(db ) {
-    console.log('🔄 Inicializando novo módulo de estoque...');
+export function initStockModule( ) {
+    console.log("🔄 Inicializando novo módulo de estoque...");
     
+    const db = getFirestoreDb();
     if (!db) {
-        console.error('❌ Instância do Firestore não fornecida');
+        console.error("❌ Instância do Firestore não fornecida em initStockModule");
         return;
     }
     
-    stockState.db = db;
-    console.log('✅ Firestore conectado ao módulo de estoque');
+    stockState.db = db; // Ainda mantemos para compatibilidade interna, mas o ideal é remover
+    console.log("✅ Firestore conectado ao módulo de estoque");
     
     // Configurar navegação entre views
     setupNavigation();
@@ -66,6 +68,14 @@ function setupNavigation() {
     movementsBtn.addEventListener('click', () => {
         switchView('movements');
     });
+    
+    // Configurar filtro de produtos
+    const productCategoryFilter = document.getElementById('product-category-filter');
+    if (productCategoryFilter) {
+        productCategoryFilter.addEventListener('change', () => {
+            renderProducts();
+        });
+    }
 }
 
 // Alternar entre views
@@ -154,6 +164,11 @@ function hideProductForm() {
 
 // Salvar produto
 async function saveProduct() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em saveProduct");
+        return;
+    }
     if (stockState.isLoading) return;
     
     try {
@@ -203,13 +218,22 @@ async function saveProduct() {
         
         console.log('💾 Salvando produto:', productData);
         
-        await setDoc(doc(stockState.db, 'stock', id), productData);
+        await setDoc(doc(db, 'stock', id), productData);
         
         console.log('✅ Produto salvo com sucesso');
         showPopup('Produto salvo com sucesso!');
         
         hideProductForm();
+        
+        // Forçar atualização da lista de produtos
         await loadProducts();
+        
+        // Se estivermos na view de produtos, garantir que ela seja renderizada
+        if (stockState.currentView === 'products') {
+            renderProducts();
+            updateProductsSummary();
+            updateMovementFilters();
+        }
         
     } catch (error) {
         console.error('❌ Erro ao salvar produto:', error);
@@ -221,6 +245,11 @@ async function saveProduct() {
 
 // Carregar produtos
 async function loadProducts() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em loadProducts");
+        return;
+    }
     if (stockState.isLoading) return;
     
     try {
@@ -237,7 +266,7 @@ async function loadProducts() {
         productsContainer.innerHTML = '<div class="loading">Carregando produtos...</div>';
         
         // Buscar produtos no Firestore
-        const snapshot = await getDocs(collection(stockState.db, 'stock'));
+        const snapshot = await getDocs(collection(db, 'stock'));
         
         stockState.products = [];
         snapshot.forEach((doc) => {
@@ -272,18 +301,34 @@ function renderProducts() {
     const container = document.getElementById('products-list');
     if (!container) return;
     
-    if (stockState.products.length === 0) {
+    // Obter filtro selecionado
+    const categoryFilter = document.getElementById('product-category-filter');
+    const selectedCategory = categoryFilter ? categoryFilter.value : 'all';
+    
+    // Filtrar produtos
+    let filteredProducts = stockState.products;
+    if (selectedCategory !== 'all') {
+        filteredProducts = stockState.products.filter(product => 
+            (product.category || 'Outros') === selectedCategory
+        );
+    }
+    
+    if (filteredProducts.length === 0) {
+        const message = selectedCategory === 'all' 
+            ? 'Nenhum produto cadastrado' 
+            : `Nenhum produto encontrado na categoria "${selectedCategory}"`;
+        
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-box-open"></i>
-                <h3>Nenhum produto cadastrado</h3>
-                <p>Clique em "Adicionar Produto" para começar</p>
+                <h3>${message}</h3>
+                <p>${selectedCategory === 'all' ? 'Clique em "Adicionar Produto" para começar' : 'Tente selecionar outra categoria'}</p>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = stockState.products.map(product => {
+    container.innerHTML = filteredProducts.map(product => {
         const totalValue = (product.quantity || 0) * (product.averageCost || 0);
         const isOutOfStock = (product.quantity || 0) === 0;
         
@@ -407,10 +452,31 @@ function setupMovementForm() {
             closeMovementModal();
         }
     });
+    
+    // Configurar filtros de movimentações
+    const productFilter = document.getElementById('movement-product-filter');
+    const typeFilter = document.getElementById('movement-type-filter');
+    
+    if (productFilter) {
+        productFilter.addEventListener('change', () => {
+            renderMovements();
+        });
+    }
+    
+    if (typeFilter) {
+        typeFilter.addEventListener('change', () => {
+            renderMovements();
+        });
+    }
 }
 
 // Carregar movimentações
 async function loadMovements() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em loadMovements");
+        return;
+    }
     if (stockState.isLoading) return;
     
     try {
@@ -428,7 +494,7 @@ async function loadMovements() {
         
         // Buscar movimentações no Firestore
         const snapshot = await getDocs(
-            query(collection(stockState.db, 'stock_movements'), orderBy('timestamp', 'desc'))
+            query(collection(db, 'stock_movements'), orderBy('timestamp', 'desc'))
         );
         
         stockState.movements = [];
@@ -462,18 +528,44 @@ function renderMovements() {
     const container = document.getElementById('movements-list');
     if (!container) return;
     
-    if (stockState.movements.length === 0) {
+    // Obter filtros selecionados
+    const productFilter = document.getElementById('movement-product-filter');
+    const typeFilter = document.getElementById('movement-type-filter');
+    const selectedProduct = productFilter ? productFilter.value : 'all';
+    const selectedType = typeFilter ? typeFilter.value : 'all';
+    
+    // Filtrar movimentações
+    let filteredMovements = stockState.movements;
+    
+    if (selectedProduct !== 'all') {
+        filteredMovements = filteredMovements.filter(movement => 
+            movement.productId === selectedProduct
+        );
+    }
+    
+    if (selectedType !== 'all') {
+        filteredMovements = filteredMovements.filter(movement => 
+            movement.type === selectedType
+        );
+    }
+    
+    if (filteredMovements.length === 0) {
+        const hasFilters = selectedProduct !== 'all' || selectedType !== 'all';
+        const message = hasFilters 
+            ? 'Nenhuma movimentação encontrada com os filtros aplicados' 
+            : 'Nenhuma movimentação registrada';
+        
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-exchange-alt"></i>
-                <h3>Nenhuma movimentação registrada</h3>
-                <p>As movimentações de entrada e saída aparecerão aqui</p>
+                <h3>${message}</h3>
+                <p>${hasFilters ? 'Tente ajustar os filtros' : 'As movimentações de entrada e saída aparecerão aqui'}</p>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = stockState.movements.map(movement => {
+    container.innerHTML = filteredMovements.map(movement => {
         const product = stockState.products.find(p => p.id === movement.productId);
         const productName = product ? product.name : movement.productId;
         const date = new Date(movement.timestamp);
@@ -539,6 +631,11 @@ window.editProduct = function(productId) {
 };
 
 window.deleteProduct = async function(productId) {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em deleteProduct");
+        return;
+    }
     const product = stockState.products.find(p => p.id === productId);
     if (!product) return;
     
@@ -551,7 +648,7 @@ window.deleteProduct = async function(productId) {
     if (!confirmed) return;
     
     try {
-        await deleteDoc(doc(stockState.db, 'stock', productId));
+        await deleteDoc(doc(db, 'stock', productId));
         showPopup('Produto excluído com sucesso!');
         await loadProducts();
     } catch (error) {
@@ -604,6 +701,11 @@ function closeMovementModal() {
 
 // Salvar movimentação
 async function saveMovement() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore não inicializado em saveMovement");
+        return;
+    }
     if (stockState.isLoading) return;
     
     try {
@@ -633,8 +735,8 @@ async function saveMovement() {
         }
         
         // Usar transação para garantir consistência
-        await runTransaction(stockState.db, async (transaction) => {
-            const productRef = doc(stockState.db, 'stock', productId);
+        await runTransaction(db, async (transaction) => {
+            const productRef = doc(db, 'stock', productId);
             const productSnap = await transaction.get(productRef);
             
             if (!productSnap.exists()) {
@@ -680,8 +782,49 @@ async function saveMovement() {
                 reason: reason || (type === 'entry' ? 'Entrada de estoque' : 'Saída de estoque')
             };
             
-            transaction.set(doc(stockState.db, 'stock_movements', movementId), movementData);
+            transaction.set(doc(db, 'stock_movements', movementId), movementData);
         });
+        
+        // Registrar transação no fluxo de caixa
+        try {
+            if (type === 'entry') {
+                // Entrada de estoque = Despesa
+                const totalCost = quantity * unitCost;
+                await registerExpense(db,
+                    `Compra de estoque: ${product.name} (${quantity} unidades)`,
+                    totalCost,
+                    'supplies',
+                    'stock_entry',
+                    {
+                        productId: productId,
+                        quantity: quantity,
+                        unitCost: unitCost,
+                        stockMovementId: movementId
+                    }
+                );
+                console.log('💸 Despesa registrada no fluxo de caixa');
+            } else {
+                // Saída de estoque = Receita
+                const totalRevenue = quantity * unitPrice;
+                await registerRevenue(db,
+                    `Venda de produto: ${product.name} (${quantity} unidades)`,
+                    totalRevenue,
+                    'stock_sales',
+                    'stock_exit',
+                    {
+                        productId: productId,
+                        quantity: quantity,
+                        unitPrice: unitPrice,
+                        profit: profit,
+                        stockMovementId: movementId
+                    }
+                );
+                console.log('💰 Receita registrada no fluxo de caixa');
+            }
+        } catch (cashflowError) {
+            console.warn('⚠️ Erro ao registrar no fluxo de caixa:', cashflowError);
+            // Não interromper o processo se houver erro no fluxo de caixa
+        }
         
         console.log('✅ Movimentação registrada com sucesso');
         showPopup(`${type === 'entry' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
@@ -703,4 +846,3 @@ async function saveMovement() {
 
 // Exportar funções principais
 export { loadProducts, loadMovements };
-
