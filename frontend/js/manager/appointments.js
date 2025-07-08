@@ -3,7 +3,7 @@ import { showPopup, showSection, getFirestoreDb } from './utils.js';
 import { loadBarbersForSelect } from './services.js';
 import { registerRevenue } from './cashflow_enhanced.js';
 
-async function createServiceRevenue(db, appointment ) {
+async function createServiceRevenue(db, appointment  ) {
     const { totalPrice, id: appointmentId, services } = appointment;
     const cashFlowData = {
         id: `cf_${Date.now()}`,
@@ -76,8 +76,14 @@ async function loadAppointments(barberId = 'all', date = '') {
 
         let appointmentsQuery = collection(db, 'appointments');
 
-        if (barberId !== 'all') {
-            appointmentsQuery = query(appointmentsQuery, where('barberId', '==', barberId));
+        // Verifica se barberId é um objeto e extrai o ID se for o caso
+        let actualBarberId = barberId;
+        if (typeof barberId === 'object' && barberId !== null && barberId.id) {
+            actualBarberId = barberId.id;
+        }
+
+        if (actualBarberId !== 'all') {
+            appointmentsQuery = query(appointmentsQuery, where('barberId', '==', actualBarberId));
         }
         if (date) {
             // Garante que a data seja uma string no formato 'YYYY-MM-DD'
@@ -207,7 +213,7 @@ async function loadAppointments(barberId = 'all', date = '') {
                 </div>
                 <div class="card-actions">
                     ${actions}
-                </div>
+                }
             `;
             appointmentsList.appendChild(card);
 
@@ -228,7 +234,7 @@ async function loadAppointments(barberId = 'all', date = '') {
                     const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
                     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
 
-                    await setDoc(doc(db, 'appointments', apptId ), { reminderSent: true }, { merge: true });
+                    await setDoc(doc(db, 'appointments', apptId  ), { reminderSent: true }, { merge: true });
 
                     btn.innerHTML = '<i class="fab fa-whatsapp"></i>';
                     btn.title = 'Lembrete já enviado';
@@ -264,7 +270,7 @@ async function cancelAppointment(id) {
         console.error("Firestore não inicializado em cancelAppointment");
         return;
     }
-    const confirmed = await showPopup('Cancelar agendamento?', true);
+    const confirmed = await showPopup('Tem certeza que deseja excluir este agendamento?', true);
     if (confirmed) {
         try {
             await setDoc(doc(db, 'appointments', id), { status: 'canceled' }, { merge: true });
@@ -332,7 +338,7 @@ async function markCompleted(id) {
             // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
-            loadAppointments(barberId, date);
+            await loadAppointments(barberId, date);
             showPopup('Agendamento marcado como concluído!');
         } catch (error) {
             console.error('Erro ao marcar agendamento como concluído:', error);

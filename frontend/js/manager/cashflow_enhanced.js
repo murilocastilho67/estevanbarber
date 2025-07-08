@@ -34,7 +34,7 @@ const cashflowState = {
 const defaultCategories = [
     // Categorias de Despesas
     { id: 'rent', name: 'Aluguel', type: 'expense', icon: 'fas fa-home' },
-    { id: 'utilities', name: 'Contas (Luz, Água, Internet)', type: 'expense', icon: 'fas fa-bolt' },
+    { id: 'utilities', name: 'Contas (Luz, Água, Internet )', type: 'expense', icon: 'fas fa-bolt' },
     { id: 'salaries', name: 'Salários', type: 'expense', icon: 'fas fa-users' },
     { id: 'supplies', name: 'Materiais e Suprimentos', type: 'expense', icon: 'fas fa-box' },
     { id: 'marketing', name: 'Marketing', type: 'expense', icon: 'fas fa-bullhorn' },
@@ -115,6 +115,14 @@ async function initializeCategories(db) {
         
     } catch (error) {
         console.error('❌ Erro ao inicializar categorias:', error);
+        // Se houver erro de permissão, usar categorias padrão em memória
+        if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
+            console.warn('⚠️ Erro de permissão ao acessar categorias do Firestore. Usando categorias padrão em memória.');
+            cashflowState.categories = defaultCategories;
+            updateCategorySelects();
+        } else {
+            showPopup('Erro ao inicializar categorias: ' + error.message);
+        }
     }
 }
 
@@ -136,6 +144,14 @@ async function loadCategories(db) {
         
     } catch (error) {
         console.error('❌ Erro ao carregar categorias:', error);
+        // Se houver erro de permissão, usar categorias padrão em memória
+        if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
+            console.warn('⚠️ Erro de permissão ao carregar categorias do Firestore. Usando categorias padrão em memória.');
+            cashflowState.categories = defaultCategories;
+            updateCategorySelects();
+        } else {
+            showPopup('Erro ao carregar categorias: ' + error.message);
+        }
     }
 }
 
@@ -583,7 +599,7 @@ function renderTransactions(transactions) {
                 <div class="transaction-info">
                     <h4>${transaction.description}</h4>
                     <p class="transaction-category">${categoryName}</p>
-                    <p class="transaction-date">${formattedDate}</p>
+                    <p class="transaction-date">Lançamento: ${formattedDate}</p>
                     ${transaction.source ? `<p class="transaction-source">Origem: ${transaction.source}</p>` : ''}
                     ${transaction.dueDate ? `<p class="transaction-due">Vencimento: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}</p>` : ''}
                     ${transaction.paymentDate ? `<p class="transaction-payment">Pagamento: ${new Date(transaction.paymentDate).toLocaleDateString('pt-BR')}</p>` : ''}
@@ -877,4 +893,3 @@ export function loadCashFlowSummary() {
 
 // Exportar estado para debug
 export { cashflowState };
-
