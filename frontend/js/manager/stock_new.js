@@ -12,7 +12,7 @@ import {
     addDoc 
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, getFirestoreDb } from './utils.js';
-import { registerRevenue, registerExpense } from './cashflow_new.js';
+import { registerRevenue, registerExpense } from './cashflow_enhanced.js';
 
 // Estado global do módulo de estoque
 const stockState = {

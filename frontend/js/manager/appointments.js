@@ -1,7 +1,7 @@
 import { collection, getDocs, doc, setDoc, getDoc, query, where, runTransaction, addDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection, getFirestoreDb } from './utils.js';
 import { loadBarbersForSelect } from './services.js';
-import { registerRevenue } from './cashflow_new.js';
+import { registerRevenue } from './cashflow_enhanced.js';
 
 async function createServiceRevenue(db, appointment ) {
     const { totalPrice, id: appointmentId, services } = appointment;
@@ -68,7 +68,8 @@ async function loadAppointments(barberId = 'all', date = '') {
         return;
     }
     try {
-        console.log('Iniciando loadAppointments com filtros:', { barberId, date });
+        console.log("Iniciando loadAppointments com filtros:", { barberId, date });
+        console.log("Tipo de barberId:", typeof barberId, "Tipo de date:", typeof date);
 
         const appointmentsList = document.getElementById('appointmentsList');
         appointmentsList.innerHTML = '';
@@ -79,7 +80,11 @@ async function loadAppointments(barberId = 'all', date = '') {
             appointmentsQuery = query(appointmentsQuery, where('barberId', '==', barberId));
         }
         if (date) {
-            appointmentsQuery = query(appointmentsQuery, where('date', '==', date));
+            // Garante que a data seja uma string no formato 'YYYY-MM-DD'
+            // Se o input type='date' já retorna 'YYYY-MM-DD', esta linha apenas confirma.
+            // Se o Firestore armazena como Timestamp, a lógica de consulta precisaria de um objeto Timestamp.
+            // Assumindo que o Firestore armazena a data como string 'YYYY-MM-DD'.
+            appointmentsQuery = query(appointmentsQuery, where("date", "==", date));
         }
 
         const appointmentsSnapshot = await getDocs(appointmentsQuery);

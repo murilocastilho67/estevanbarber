@@ -30,16 +30,19 @@ const cashflowState = {
     }
 };
 
-// Categorias padrão de despesas
+// Categorias padrão de despesas e receitas
 const defaultCategories = [
+    // Categorias de Despesas
     { id: 'rent', name: 'Aluguel', type: 'expense', icon: 'fas fa-home' },
-    { id: 'utilities', name: 'Contas (Luz, Água, Internet )', type: 'expense', icon: 'fas fa-bolt' },
+    { id: 'utilities', name: 'Contas (Luz, Água, Internet)', type: 'expense', icon: 'fas fa-bolt' },
     { id: 'salaries', name: 'Salários', type: 'expense', icon: 'fas fa-users' },
     { id: 'supplies', name: 'Materiais e Suprimentos', type: 'expense', icon: 'fas fa-box' },
     { id: 'marketing', name: 'Marketing', type: 'expense', icon: 'fas fa-bullhorn' },
     { id: 'maintenance', name: 'Manutenção', type: 'expense', icon: 'fas fa-tools' },
     { id: 'taxes', name: 'Impostos', type: 'expense', icon: 'fas fa-file-invoice-dollar' },
     { id: 'other_expense', name: 'Outras Despesas', type: 'expense', icon: 'fas fa-minus-circle' },
+    
+    // Categorias de Receitas
     { id: 'services', name: 'Serviços Realizados', type: 'revenue', icon: 'fas fa-cut' },
     { id: 'stock_sales', name: 'Vendas de Produtos', type: 'revenue', icon: 'fas fa-shopping-cart' },
     { id: 'other_revenue', name: 'Outras Receitas', type: 'revenue', icon: 'fas fa-plus-circle' }
@@ -47,7 +50,7 @@ const defaultCategories = [
 
 // Inicialização do módulo de fluxo de caixa
 export function initCashFlow() {
-    console.log("💰 Inicializando novo módulo de fluxo de caixa...");
+    console.log("💰 Inicializando módulo de fluxo de caixa aprimorado...");
     
     const db = getFirestoreDb();
     if (!db) {
@@ -55,7 +58,7 @@ export function initCashFlow() {
         return;
     }
     
-    cashflowState.db = db; // Ainda mantemos para compatibilidade interna, mas o ideal é remover
+    cashflowState.db = db;
     console.log("✅ Firestore conectado ao módulo de fluxo de caixa");
     
     // Inicializar categorias padrão
@@ -66,12 +69,10 @@ export function initCashFlow() {
     
     // Configurar formulários
     setupExpenseForm();
+    setupCategoryManagement();
     
-     // Configurar filtros
+    // Configurar filtros
     setupFilters();
-    
-    // Carregar dados iniciais (apenas categorias)
-    // loadTransactions(); // Não carregar aqui, será carregado ao exibir a seção
     
     console.log("✅ Módulo de fluxo de caixa inicializado com sucesso");
 }
@@ -160,8 +161,10 @@ function updateCategorySelects() {
 function setupNavigation() {
     const summaryBtn = document.getElementById('cashflow-nav-summary');
     const expensesBtn = document.getElementById('cashflow-nav-expenses');
+    const categoriesBtn = document.getElementById('cashflow-nav-categories');
     const summaryView = document.getElementById('cashflow-summary-view');
     const expensesView = document.getElementById('cashflow-expenses-view');
+    const categoriesView = document.getElementById('cashflow-categories-view');
     
     if (!summaryBtn || !expensesBtn || !summaryView || !expensesView) {
         console.error('❌ Elementos de navegação do fluxo de caixa não encontrados');
@@ -175,29 +178,41 @@ function setupNavigation() {
     expensesBtn.addEventListener('click', () => {
         switchView('expenses');
     });
+    
+    if (categoriesBtn) {
+        categoriesBtn.addEventListener('click', () => {
+            switchView('categories');
+        });
+    }
 }
 
 // Alternar entre views
 function switchView(view) {
     const summaryBtn = document.getElementById('cashflow-nav-summary');
     const expensesBtn = document.getElementById('cashflow-nav-expenses');
+    const categoriesBtn = document.getElementById('cashflow-nav-categories');
     const summaryView = document.getElementById('cashflow-summary-view');
     const expensesView = document.getElementById('cashflow-expenses-view');
+    const categoriesView = document.getElementById('cashflow-categories-view');
     
     // Atualizar botões
     summaryBtn.classList.toggle('active', view === 'summary');
     expensesBtn.classList.toggle('active', view === 'expenses');
+    if (categoriesBtn) categoriesBtn.classList.toggle('active', view === 'categories');
     
     // Atualizar views
     summaryView.classList.toggle('active', view === 'summary');
     expensesView.classList.toggle('active', view === 'expenses');
+    if (categoriesView) categoriesView.classList.toggle('active', view === 'categories');
     
     cashflowState.currentView = view;
     
     if (view === 'summary') {
         loadSummary();
-    } else {
+    } else if (view === 'expenses') {
         loadRecentExpenses();
+    } else if (view === 'categories') {
+        loadCategoriesView();
     }
 }
 
@@ -218,7 +233,21 @@ function setupExpenseForm() {
     
     cancelBtn.addEventListener('click', () => {
         form.reset();
+        // Definir data padrão como hoje
+        document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
     });
+    
+    // Definir data padrão como hoje
+    const dateInput = document.getElementById('expense-date');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+}
+
+// Configurar gerenciamento de categorias
+function setupCategoryManagement() {
+    // Esta função será implementada quando adicionarmos a view de categorias
+    console.log('📝 Configuração de gerenciamento de categorias preparada');
 }
 
 // Configurar filtros
@@ -227,10 +256,17 @@ function setupFilters() {
     const typeFilter = document.getElementById('cashflow-type-filter');
     const startDateFilter = document.getElementById('cashflow-start-date');
     const endDateFilter = document.getElementById('cashflow-end-date');
+    const customDateFilters = document.getElementById('custom-date-filters');
     
     if (periodFilter) {
         periodFilter.addEventListener('change', (e) => {
             cashflowState.filters.period = e.target.value;
+            
+            // Mostrar/ocultar filtros de data personalizada
+            if (customDateFilters) {
+                customDateFilters.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+            }
+            
             updateDateFilters();
             loadSummary();
         });
@@ -246,14 +282,18 @@ function setupFilters() {
     if (startDateFilter) {
         startDateFilter.addEventListener('change', (e) => {
             cashflowState.filters.startDate = e.target.value;
-            loadSummary();
+            if (cashflowState.filters.period === 'custom') {
+                loadSummary();
+            }
         });
     }
     
     if (endDateFilter) {
         endDateFilter.addEventListener('change', (e) => {
             cashflowState.filters.endDate = e.target.value;
-            loadSummary();
+            if (cashflowState.filters.period === 'custom') {
+                loadSummary();
+            }
         });
     }
     
@@ -447,7 +487,6 @@ function updateSummaryCards(totals) {
 // Atualizar gráfico
 function updateChart(transactions) {
     const canvas = document.getElementById("cashflow-chart");
-    // Só tentar obter o contexto se o canvas estiver no DOM e visível
     if (!canvas || canvas.offsetParent === null) {
         console.warn("Canvas do gráfico de fluxo de caixa não encontrado ou não visível.");
         return;
@@ -478,7 +517,7 @@ function updateChart(transactions) {
     const data = Object.values(categoryData);
     
     // Criar novo gráfico
-    if (window.Chart) {
+    if (window.Chart && labels.length > 0) {
         cashflowState.chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -546,6 +585,8 @@ function renderTransactions(transactions) {
                     <p class="transaction-category">${categoryName}</p>
                     <p class="transaction-date">${formattedDate}</p>
                     ${transaction.source ? `<p class="transaction-source">Origem: ${transaction.source}</p>` : ''}
+                    ${transaction.dueDate ? `<p class="transaction-due">Vencimento: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}</p>` : ''}
+                    ${transaction.paymentDate ? `<p class="transaction-payment">Pagamento: ${new Date(transaction.paymentDate).toLocaleDateString('pt-BR')}</p>` : ''}
                 </div>
                 <div class="transaction-amount ${transaction.type}">
                     ${isRevenue ? '+' : '-'} R$ ${(transaction.amount || 0).toFixed(2)}
@@ -579,9 +620,11 @@ async function saveExpense() {
         const category = document.getElementById('expense-category').value;
         const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
         const date = document.getElementById('expense-date').value;
+        const dueDate = document.getElementById('expense-due-date')?.value || null;
+        const paymentDate = document.getElementById('expense-payment-date')?.value || null;
         
         if (!description || !category || amount <= 0 || !date) {
-            showPopup('Todos os campos são obrigatórios');
+            showPopup('Todos os campos obrigatórios devem ser preenchidos');
             return;
         }
         
@@ -594,6 +637,8 @@ async function saveExpense() {
             category,
             amount,
             date,
+            dueDate,
+            paymentDate,
             source: 'manual',
             createdAt: new Date().toISOString()
         };
@@ -607,12 +652,16 @@ async function saveExpense() {
         
         // Limpar formulário
         document.getElementById('expense-form').reset();
+        // Redefinir data padrão
+        document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
         
         // Recarregar dados
         await loadTransactions();
         
         if (cashflowState.currentView === 'expenses') {
             await loadRecentExpenses();
+        } else if (cashflowState.currentView === 'summary') {
+            loadSummary();
         }
         
     } catch (error) {
@@ -667,12 +716,17 @@ function renderRecentExpenses(expenses) {
         const date = new Date(expense.date);
         const formattedDate = date.toLocaleDateString('pt-BR');
         
+        const dueDate = expense.dueDate ? new Date(expense.dueDate).toLocaleDateString('pt-BR') : null;
+        const paymentDate = expense.paymentDate ? new Date(expense.paymentDate).toLocaleDateString('pt-BR') : null;
+        
         return `
             <div class="expense-card">
                 <div class="expense-info">
                     <h4>${expense.description}</h4>
                     <p class="expense-category">${categoryName}</p>
-                    <p class="expense-date">${formattedDate}</p>
+                    <p class="expense-date">Lançamento: ${formattedDate}</p>
+                    ${dueDate ? `<p class="expense-due">Vencimento: ${dueDate}</p>` : ''}
+                    ${paymentDate ? `<p class="expense-payment">Pagamento: ${paymentDate}</p>` : ''}
                 </div>
                 <div class="expense-amount">
                     R$ ${(expense.amount || 0).toFixed(2)}
@@ -722,6 +776,7 @@ export async function registerRevenue(dbInstance, description, amount, category 
         // Recarregar dados se estivermos na view de fluxo de caixa
         if (cashflowState.currentView === 'summary') {
             await loadTransactions();
+            loadSummary();
         }
         
         return transactionId;
@@ -764,6 +819,7 @@ export async function registerExpense(dbInstance, description, amount, category 
         // Recarregar dados se estivermos na view de fluxo de caixa
         if (cashflowState.currentView === 'summary') {
             await loadTransactions();
+            loadSummary();
         }
         
         return transactionId;
@@ -802,6 +858,8 @@ window.deleteTransaction = async function(transactionId) {
         
         if (cashflowState.currentView === 'expenses') {
             await loadRecentExpenses();
+        } else if (cashflowState.currentView === 'summary') {
+            loadSummary();
         }
         
     } catch (error) {
@@ -819,3 +877,4 @@ export function loadCashFlowSummary() {
 
 // Exportar estado para debug
 export { cashflowState };
+

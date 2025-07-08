@@ -26,6 +26,434 @@
         window.db = db;
         window.auth = auth;
     </script>
+    <style>
+        /* Estilos específicos para o dashboard e fluxo de caixa aprimorado */
+        .dashboard-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .metric-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .metric-card.revenue .value {
+            color: #28a745;
+        }
+        
+        .metric-card.expense .value {
+            color: #dc3545;
+        }
+        
+        .metric-card.profit .value {
+            color: #007bff;
+        }
+        
+        .dashboard-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container h3 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        .cashflow-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .cashflow-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .summary-card.revenue {
+            border-left: 4px solid #28a745;
+        }
+        
+        .summary-card.expense {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .summary-card.balance {
+            border-left: 4px solid #007bff;
+        }
+        
+        .summary-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .summary-card.revenue .summary-icon {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .summary-card.expense .summary-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        .summary-card.balance .summary-icon {
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+        }
+        
+        .summary-info h4 {
+            margin: 0 0 0.5rem 0;
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .summary-value.positive {
+            color: #28a745;
+        }
+        
+        .summary-value.negative {
+            color: #dc3545;
+        }
+        
+        .cashflow-chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .cashflow-chart-container h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .cashflow-chart-container canvas {
+            max-height: 400px;
+        }
+        
+        .transactions-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .transaction-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .transaction-card.revenue {
+            border-left: 4px solid #28a745;
+        }
+        
+        .transaction-card.expense {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .transaction-icon {
+            font-size: 1.5rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .transaction-card.revenue .transaction-icon {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .transaction-card.expense .transaction-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        .transaction-info {
+            flex: 1;
+        }
+        
+        .transaction-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+            color: #333;
+        }
+        
+        .transaction-category,
+        .transaction-date,
+        .transaction-source,
+        .transaction-due,
+        .transaction-payment {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .transaction-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        .transaction-amount.revenue {
+            color: #28a745;
+        }
+        
+        .transaction-amount.expense {
+            color: #dc3545;
+        }
+        
+        .transaction-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .action-btn.edit {
+            color: #007bff;
+        }
+        
+        .action-btn.delete {
+            color: #dc3545;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .expenses-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .expense-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .expense-info {
+            flex: 1;
+        }
+        
+        .expense-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+            color: #333;
+        }
+        
+        .expense-category,
+        .expense-date,
+        .expense-due,
+        .expense-payment {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .expense-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #dc3545;
+            text-align: right;
+        }
+        
+        .expense-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
 </head>
 <body class="manager-layout">
     <header class="top-header">
@@ -47,8 +475,9 @@
         </div>
         <h2>Estevan Barber</h2>
         <nav>
+            <a href="#" id="nav-dashboard" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="#" id="nav-barbers"><i class="fas fa-user-tie"></i> Barbeiros</a>
-            <a href="#" id="nav-appointments" class="active"><i class="fas fa-calendar-check"></i> Agendamentos</a>
+            <a href="#" id="nav-appointments"><i class="fas fa-calendar-check"></i> Agendamentos</a>
             <a href="#" id="nav-services"><i class="fas fa-cut"></i> Serviços</a>
             <a href="#" id="nav-schedules"><i class="fas fa-clock"></i> Horários</a>
             <a href="#" id="nav-stock" class="has-subitems"><i class="fas fa-boxes"></i> Estoque <i class="fas fa-chevron-up submenu-icon"></i></a>
@@ -59,9 +488,8 @@
             <a href="#" id="nav-cashflow" class="has-subitems"><i class="fas fa-cash-register"></i> Fluxo de Caixa <i class="fas fa-chevron-up submenu-icon"></i></a>
             <div class="subitems" id="nav-cashflow-subitems" style="display: none;">
                 <a href="#" class="nav-subitem" id="nav-cashflow-summary"><i class="fas fa-chart-pie"></i> Resumo Financeiro</a>
-                <a href="#" class="nav-subitem" id="nav-cashflow-fixed-expense"><i class="fas fa-plus"></i> Cadastrar Despesa Fixa</a>
+                <a href="#" class="nav-subitem" id="nav-cashflow-expenses"><i class="fas fa-plus"></i> Cadastrar Despesa</a>
             </div>
-            <a href="#" id="nav-dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="#" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
     </div>
@@ -69,6 +497,98 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="main-content" id="mainContent">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section active">
+            <h2>Dashboard</h2>
+            
+            <!-- Filtros do Dashboard -->
+            <div class="cashflow-filters">
+                <div class="filter-group">
+                    <label for="dashboard-period-filter">Período:</label>
+                    <select id="dashboard-period-filter">
+                        <option value="today">Hoje</option>
+                        <option value="week">Esta Semana</option>
+                        <option value="month" selected>Este Mês</option>
+                        <option value="year">Este Ano</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                </div>
+                <div class="filter-group" id="dashboard-custom-date-filters" style="display: none;">
+                    <label for="dashboard-start-date">De:</label>
+                    <input type="date" id="dashboard-start-date">
+                </div>
+                <div class="filter-group" id="dashboard-custom-date-filters-end" style="display: none;">
+                    <label for="dashboard-end-date">Até:</label>
+                    <input type="date" id="dashboard-end-date">
+                </div>
+            </div>
+            
+            <!-- Métricas Principais -->
+            <div class="dashboard-metrics">
+                <div class="metric-card">
+                    <h3>Total de Agendamentos</h3>
+                    <div class="value" id="total-appointments-metric">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Agendamentos Realizados</h3>
+                    <div class="value" id="completed-appointments-metric">0</div>
+                </div>
+                <div class="metric-card revenue">
+                    <h3>Receita Total</h3>
+                    <div class="value" id="total-revenue-metric">R$ 0,00</div>
+                </div>
+                <div class="metric-card expense">
+                    <h3>Despesas Totais</h3>
+                    <div class="value" id="total-expenses-metric">R$ 0,00</div>
+                </div>
+                <div class="metric-card profit">
+                    <h3>Lucro Líquido</h3>
+                    <div class="value" id="net-profit-metric">R$ 0,00</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Taxa de Conversão</h3>
+                    <div class="value" id="conversion-rate-metric">0%</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Não Compareceram</h3>
+                    <div class="value" id="no-show-appointments-metric">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Cancelados</h3>
+                    <div class="value" id="canceled-appointments-metric">0</div>
+                </div>
+            </div>
+            
+            <!-- Gráficos -->
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3>Agendamentos por Barbeiro</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="appointments-by-barber-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>Receita por Barbeiro</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="revenue-by-barber-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>Serviços Mais Realizados</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="top-services-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>Distribuição Semanal</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="weekly-distribution-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Barbeiros -->
         <div id="barbers-section" class="section">
             <h2>Gerenciar Barbeiros</h2>
             <form id="barberForm" class="mb-3">
@@ -85,13 +605,13 @@
             <div id="barbersList" class="card-list"></div>
         </div>
 
-        <div id="appointments-section" class="section active">
+        <!-- Seção de Agendamentos -->
+        <div id="appointments-section" class="section">
             <h2>Agendamentos</h2>
             <div class="filter">
                 <label for="barberFilter">Barbeiro:</label>
                 <select id="barberFilter" name="barberFilter">
                     <option value="all">Todos</option>
-                    <!-- Opções serão preenchidas dinamicamente -->
                 </select>
                 <label for="dateFilter">Data:</label>
                 <input type="date" id="dateFilter">
@@ -105,6 +625,7 @@
             </div>
         </div>
 
+        <!-- Seção de Serviços -->
         <div id="services-section" class="section">
             <h2>Gerenciar Serviços</h2>
             <form id="serviceForm" class="mb-4">
@@ -114,7 +635,6 @@
                         <label for="serviceBarber" class="form-label">Barbeiro:</label>
                         <select id="serviceBarber" name="serviceBarber" class="form-select" required>
                             <option value="">Selecione um barbeiro</option>
-                            <!-- Opções serão preenchidas dinamicamente -->
                         </select>
                         <div class="invalid-feedback">Selecione um barbeiro.</div>
                     </div>
@@ -142,9 +662,9 @@
             <div id="servicesList" class="card-list"></div>
         </div>
 
+        <!-- Seção de Horários -->
         <div id="schedules-section" class="section">
             <h2>Gerenciar Horários</h2>
-
             <form id="scheduleForm" class="mb-4">
                 <div class="row g-2">
                     <div class="col-12 col-md-4">
@@ -152,7 +672,6 @@
                         <label for="scheduleBarber" class="form-label">Barbeiro:</label>
                         <select id="scheduleBarber" name="scheduleBarber" class="form-select" required>
                             <option value="">Selecione um barbeiro</option>
-                            <!-- Opções serão preenchidas dinamicamente -->
                         </select>
                     </div>
                     <div class="col-12 col-md-4">
@@ -189,7 +708,10 @@
             </form>
             <div class="separator">Horários Cadastrados</div>
             <div id="schedulesList" class="card-list"></div>
-        </div>        <div id="stock-section" class="section">
+        </div>
+
+        <!-- Seção de Estoque -->
+        <div id="stock-section" class="section">
             <h2>Estoque</h2>
             
             <!-- Navegação entre produtos e movimentações -->
@@ -367,7 +889,7 @@
                 </div>
 
                 <!-- Filtros do Fluxo de Caixa -->
-                <div class="filters">
+                <div class="cashflow-filters">
                     <div class="filter-group">
                         <label for="cashflow-period-filter">Período:</label>
                         <select id="cashflow-period-filter">
@@ -381,6 +903,8 @@
                     <div class="filter-group" id="custom-date-filters" style="display: none;">
                         <label for="cashflow-start-date">De:</label>
                         <input type="date" id="cashflow-start-date">
+                    </div>
+                    <div class="filter-group" id="custom-date-filters-end" style="display: none;">
                         <label for="cashflow-end-date">Até:</label>
                         <input type="date" id="cashflow-end-date">
                     </div>
@@ -427,6 +951,7 @@
 
                 <!-- Gráfico -->
                 <div class="cashflow-chart-container">
+                    <h3>Distribuição por Categoria</h3>
                     <canvas id="cashflow-chart"></canvas>
                 </div>
 
@@ -457,14 +982,6 @@
                                 <label for="expense-category">Categoria *</label>
                                 <select id="expense-category" required>
                                     <option value="">Selecione uma categoria</option>
-                                    <option value="rent">Aluguel</option>
-                                    <option value="utilities">Contas (Luz, Água, Internet)</option>
-                                    <option value="salaries">Salários</option>
-                                    <option value="supplies">Materiais e Suprimentos</option>
-                                    <option value="marketing">Marketing</option>
-                                    <option value="maintenance">Manutenção</option>
-                                    <option value="taxes">Impostos</option>
-                                    <option value="other">Outros</option>
                                 </select>
                             </div>
                         </div>
@@ -474,8 +991,18 @@
                                 <input type="number" id="expense-amount" step="0.01" min="0" required>
                             </div>
                             <div class="form-group">
-                                <label for="expense-date">Data *</label>
+                                <label for="expense-date">Data de Lançamento *</label>
                                 <input type="date" id="expense-date" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-due-date">Data de Vencimento</label>
+                                <input type="date" id="expense-due-date">
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-payment-date">Data de Pagamento</label>
+                                <input type="date" id="expense-payment-date">
                             </div>
                         </div>
                         <div class="form-actions">
@@ -494,11 +1021,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="dashboard-section" class="section">
-            <h2>Dashboard</h2>
-            <p>Seção de dashboard em desenvolvimento.</p>
-        </div>
     </div>
 
     <div class="popup-overlay" id="customPopup">
@@ -512,64 +1034,8 @@
         </div>
     </div>
 
-    <div class="popup-overlay" id="stockMovementPopup">
-        <div class="popup">
-            <h3 id="stockMovementTitle"></h3>
-            <form id="stockMovementForm">
-                <input type="hidden" id="movementProductId" name="movementProductId">
-                <input type="hidden" id="movementType" name="movementType">
-                <label for="movementQuantity">Quantidade:</label>
-                <input type="number" id="movementQuantity" name="movementQuantity" min="1" required>
-                <label for="movementUnitCost" id="movementUnitCostLabel" style="display: none;">Valor Pago por Unidade (R$):</label>
-                <input type="number" id="movementUnitCost" name="movementUnitCost" step="0.01" min="0" style="display: none;">
-                <label for="movementUnitPrice" id="movementUnitPriceLabel" style="display: none;">Valor de Venda por Unidade (R$):</label>
-                <input type="number" id="movementUnitPrice" name="movementUnitPrice" step="0.01" min="0" style="display: none;">
-                <label for="movementReason">Motivo:</label>
-                <input type="text" id="movementReason" name="movementReason" required>
-                <div class="popup-buttons">
-                    <button type="submit" class="popup-button confirm">Confirmar</button>
-                    <button type="button" class="popup-button cancel" id="stockMovementCancel">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/manager/manager.js"></script>
-    <script>
-        if ('WebSocket' in window) {
-            (function () {
-                function refreshCSS() {
-                    var sheets = [].slice.call(document.getElementsByTagName("link"));
-                    var head = document.getElementsByTagName("head")[0];
-                    for (var i = 0; i < sheets.length; ++i) {
-                        var elem = sheets[i];
-                        var parent = elem.parentElement || head;
-                        parent.removeChild(elem);
-                        var rel = elem.rel;
-                        if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
-                            var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
-                            elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
-                        }
-                        parent.appendChild(elem);
-                    }
-                }
-                var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
-                var address = protocol + window.location.host + window.location.pathname + '/ws';
-                var socket = new WebSocket(address);
-                socket.onmessage = function (msg) {
-                    if (msg.data == 'reload') window.location.reload();
-                    else if (msg.data == 'refreshcss') refreshCSS();
-                };
-                if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
-                    console.log('Live reload enabled.');
-                    sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
-                }
-            })();
-        } else {
-            console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
-        }
-    </script>
 </body>
 </html>
 

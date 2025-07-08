@@ -5,13 +5,13 @@ import { initAppointments, loadAppointments } from './appointments.js';
 import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js';
 import { initSchedules } from './schedules.js';
 import { initStockModule, loadProducts, loadMovements } from './stock_new.js';
-import { initCashFlow, loadCashFlowSummary } from './cashflow_new.js';
-import { initDashboard } from './dashboard.js';
+import { initCashFlow, loadCashFlowData } from './cashflow_enhanced.js';
+import { initDashboard, loadDashboardData } from './dashboard.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { firebaseConfig } from '../config.js';
 
-console.log('manager.js carregado - Versão: 2025-06-09' );
+console.log('manager_enhanced.js carregado - Versão: 2025-01-07');
 
 const auth = getAuth();
 console.log('Auth inicializado:', !!auth);
@@ -24,7 +24,7 @@ function waitForFirestore() {
         let attempts = 0;
         const checkDb = setInterval(() => {
             attempts++;
-            const db = getFirestoreDb(); // Obter a instância do db
+            const db = getFirestoreDb();
             if (db) {
                 clearInterval(checkDb);
                 console.log('Firestore inicializado com sucesso');
@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (menuToggle && menuClose && sidebar && sidebarOverlay && mainContent && logoutBtn && navLogout) {
         menuToggle.addEventListener('click', () => {
+            console.log('menuToggle clicado');
             sidebar.classList.add('open');
             sidebarOverlay.classList.add('active');
             menuToggle.style.display = 'none';
@@ -95,6 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
         navLinks.forEach(link => {
             link.addEventListener('click', async (e) => {
                 e.preventDefault();
+                
+                // Remover classe active de todos os links
+                navLinks.forEach(l => l.classList.remove('active'));
+                // Adicionar classe active ao link clicado
+                link.classList.add('active');
+                
                 if (link.classList.contains('has-subitems')) {
                     const subitemsId = link.id + '-subitems';
                     const subitems = document.getElementById(subitemsId);
@@ -111,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Tratamento especial para subitens do estoque
                     if (link.id === 'nav-stock-products') {
                         showSection('stock-section');
-                        // Aguardar um pouco para garantir que a seção foi carregada
                         setTimeout(() => {
                             const productsBtn = document.getElementById('stock-nav-products');
                             if (productsBtn) {
@@ -120,11 +126,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         }, 100);
                     } else if (link.id === 'nav-stock-movements') {
                         showSection('stock-section');
-                        // Aguardar um pouco para garantir que a seção foi carregada
                         setTimeout(() => {
                             const movementsBtn = document.getElementById('stock-nav-movements');
                             if (movementsBtn) {
                                 movementsBtn.click();
+                            }
+                        }, 100);
+                    } else if (link.id === 'nav-cashflow-summary') {
+                        showSection('cashflow-section');
+                        setTimeout(() => {
+                            const summaryBtn = document.getElementById('cashflow-nav-summary');
+                            if (summaryBtn) {
+                                summaryBtn.click();
+                            }
+                        }, 100);
+                    } else if (link.id === 'nav-cashflow-expenses') {
+                        showSection('cashflow-section');
+                        setTimeout(() => {
+                            const expensesBtn = document.getElementById('cashflow-nav-expenses');
+                            if (expensesBtn) {
+                                expensesBtn.click();
                             }
                         }, 100);
                     } else {
@@ -132,7 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         showSection(sectionId);
 
                         // Carregamento específico para cada seção
-                        if (sectionId === "cashflow-section") {
+                        if (sectionId === "dashboard-section") {
+                            await loadDashboardData();
+                        } else if (sectionId === "cashflow-section") {
                             loadCashFlowData();
                         } else if (sectionId === "barbers-section" && !isBarbersLoaded) {
                             await loadBarbers();
@@ -153,6 +176,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+        
+        // Configurar filtros de data personalizada para dashboard
+        const dashboardPeriodFilter = document.getElementById('dashboard-period-filter');
+        const dashboardCustomDateFilters = document.getElementById('dashboard-custom-date-filters');
+        const dashboardCustomDateFiltersEnd = document.getElementById('dashboard-custom-date-filters-end');
+        
+        if (dashboardPeriodFilter && dashboardCustomDateFilters && dashboardCustomDateFiltersEnd) {
+            dashboardPeriodFilter.addEventListener('change', (e) => {
+                const isCustom = e.target.value === 'custom';
+                dashboardCustomDateFilters.style.display = isCustom ? 'flex' : 'none';
+                dashboardCustomDateFiltersEnd.style.display = isCustom ? 'flex' : 'none';
+            });
+        }
+        
+        // Configurar filtros de data personalizada para fluxo de caixa
+        const cashflowPeriodFilter = document.getElementById('cashflow-period-filter');
+        const customDateFilters = document.getElementById('custom-date-filters');
+        const customDateFiltersEnd = document.getElementById('custom-date-filters-end');
+        
+        if (cashflowPeriodFilter && customDateFilters && customDateFiltersEnd) {
+            cashflowPeriodFilter.addEventListener('change', (e) => {
+                const isCustom = e.target.value === 'custom';
+                customDateFilters.style.display = isCustom ? 'flex' : 'none';
+                customDateFiltersEnd.style.display = isCustom ? 'flex' : 'none';
+            });
+        }
+        
     } else {
         console.error('Elementos do menu não encontrados:', { menuToggle, menuClose, sidebar, sidebarOverlay, mainContent, logoutBtn, navLogout });
     }
@@ -173,7 +223,7 @@ auth.onAuthStateChanged((user) => {
     if (!isInitialized) {
         const app = initializeApp(firebaseConfig);
         const dbInstance = getFirestore(app);
-        setFirestoreDb(dbInstance); // Definir a instância do db globalmente
+        setFirestoreDb(dbInstance);
 
         waitForFirestore().then((db) => {
             console.log("DEBUG: Firestore instance (db) disponível no window.db:", !!db);
@@ -188,7 +238,11 @@ auth.onAuthStateChanged((user) => {
             loadServices(db);
             loadAppointments(db);
             loadServiceBarbers(db);
-            showSection("appointments-section");
+            
+            // Carregar dashboard por padrão
+            showSection("dashboard-section");
+            loadDashboardData();
+            
             isInitialized = true;
             isBarbersLoaded = true;
         }).catch(error => {
@@ -197,3 +251,4 @@ auth.onAuthStateChanged((user) => {
         });
     }
 });
+
