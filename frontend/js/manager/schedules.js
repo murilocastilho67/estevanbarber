@@ -1,7 +1,7 @@
 import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, showSection, dayOfWeekPt, dayOfWeekEn } from './utils.js';
 
-let displayedScheduleIds = new Set(); // Para rastrear IDs já exibidos
+let displayedScheduleIds = new Set( ); // Para rastrear IDs já exibidos
 
 async function loadSchedules(db) {
     try {
@@ -21,19 +21,27 @@ async function loadSchedules(db) {
                 displayedScheduleIds.add(docSnapshot.id);
                 const dayPt = dayOfWeekPt[sched.dayOfWeek] || sched.dayOfWeek;
                 const barberDoc = await getDoc(doc(db, 'barbers', sched.barberId));
-                const barberName = barberDoc.exists() ? barberDoc.data().name : sched.barberId;
+                const barberName = barberDoc.exists() ? barberDoc.data().name : 'Barbeiro Desconhecido'; // Fallback para nome
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.dataset.id = docSnapshot.id;
+                // Armazena todos os dados necessários para edição no dataset
+                card.dataset.dayOfWeek = sched.dayOfWeek;
+                card.dataset.barberId = sched.barberId;
+                card.dataset.startTime = sched.startTime;
+                card.dataset.endTime = sched.endTime;
+                card.dataset.breakStart = sched.breakStart || '';
+                card.dataset.breakEnd = sched.breakEnd || '';
+
                 card.innerHTML = `
                     <div class="card-info">
                         <h4>📅 ${dayPt} — <strong>${barberName}</strong></h4>
                         <p>🕐 ${sched.startTime} - ${sched.endTime}</p>
-                        <p>⏸️ Pausa: ${sched.breakStart ? `${sched.breakStart} - ${sched.breakEnd}` : '—'}</p>
+                        <p>⏸️ Pausa: ${sched.breakStart && sched.breakEnd ? `${sched.breakStart} - ${sched.breakEnd}` : '—'}</p>
                     </div>
                     <div class="card-actions">
-                        <button class="action-btn btn-edit" title="Editar serviço"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn btn-delete" title="Excluir serviço"><i class="fas fa-trash-alt"></i></button>
+                        <button class="action-btn btn-edit" title="Editar horário"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn btn-delete" title="Excluir horário"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 `;
                 schedulesList.appendChild(card);
@@ -61,13 +69,16 @@ async function loadSchedules(db) {
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', () => {
                 const card = btn.closest('.card');
-                const dayOfWeek = card.querySelector('h4').textContent.split(' — ')[0].replace('📅 ', '');
-                const barberId = Object.keys(dayOfWeekEn).find(key => dayOfWeekEn[key] === dayOfWeek) || dayOfWeek;
-                const startTime = card.querySelectorAll('p')[0].textContent.split(' - ')[0].replace('🕐 ', '');
-                const endTime = card.querySelectorAll('p')[0].textContent.split(' - ')[1];
-                const breakStart = card.querySelectorAll('p')[1].textContent.includes('-') ? card.querySelectorAll('p')[1].textContent.split(' - ')[1].split(' ')[0] : '';
-                const breakEnd = card.querySelectorAll('p')[1].textContent.includes('-') ? card.querySelectorAll('p')[1].textContent.split(' - ')[2] : '';
-                window.editSchedule(card.dataset.id, dayOfWeek, barberId, startTime, endTime, breakStart, breakEnd);
+                // Extrai os dados diretamente do dataset
+                const id = card.dataset.id;
+                const dayOfWeek = card.dataset.dayOfWeek;
+                const barberId = card.dataset.barberId;
+                const startTime = card.dataset.startTime;
+                const endTime = card.dataset.endTime;
+                const breakStart = card.dataset.breakStart;
+                const breakEnd = card.dataset.breakEnd;
+
+                window.editSchedule(id, dayOfWeek, barberId, startTime, endTime, breakStart, breakEnd);
             });
         });
     } catch (error) {
@@ -143,7 +154,8 @@ function initSchedules(db) {
             const id = document.getElementById('scheduleId').value || `sched${Date.now()}`;
             const barberId = document.getElementById('scheduleBarber').value;
 
-            dayOfWeek = dayOfWeekEn[dayOfWeek] || dayOfWeek;
+            // Converte o dia da semana para inglês antes de salvar no Firebase
+            dayOfWeek = dayOfWeekEn(dayOfWeek);
 
             try {
                 await setDoc(doc(db, 'schedules', id), { id, dayOfWeek, startTime, endTime, breakStart, breakEnd, barberId });
@@ -164,8 +176,8 @@ function initSchedules(db) {
 
 function editSchedule(id, dayOfWeek, barberId, startTime, endTime, breakStart, breakEnd) {
     document.getElementById('scheduleId').value = id;
-    const dayPt = Object.keys(dayOfWeekEn).find(key => dayOfWeekEn[key] === dayOfWeek) || dayOfWeek;
-    document.getElementById('dayOfWeek').value = dayPt;
+    // Converte o dia da semana para português para exibir no formulário
+    document.getElementById('dayOfWeek').value = dayOfWeekPt(dayOfWeek);
     document.getElementById('scheduleBarber').value = barberId;
     document.getElementById('startTime').value = startTime;
     document.getElementById('endTime').value = endTime;

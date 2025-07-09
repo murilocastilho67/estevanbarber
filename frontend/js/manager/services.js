@@ -1,37 +1,55 @@
 import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-import { showPopup, showSection } from './utils.js';
+import { showPopup, showSection, getFirestoreDb } from './utils.js'; // Importe getFirestoreDb
 
 let isServiceFormInitialized = false;
-let displayedServiceIds = new Set();
+let displayedServiceIds = new Set( );
 
 export async function initServices(db) {
   console.log('Inicializando eventos de serviços...');
-  window.db = db;
-  await loadBarbersForSelect(db);
+  // Não é necessário window.db = db aqui, pois getFirestoreDb() será usado
+  await loadBarbersForSelect(); // Chama sem 'db', pois getFirestoreDb() será usado internamente
   const serviceForm = document.getElementById("serviceForm");
   if (serviceForm && !isServiceFormInitialized) {
-    serviceForm.addEventListener("submit", (event) => addOrUpdateService(db, event));
+    serviceForm.addEventListener("submit", (event) => addOrUpdateService(getFirestoreDb(), event)); // Passa a instância do DB
     isServiceFormInitialized = true;
   }
   document.getElementById("nav-services").addEventListener("click", async () => {
-    await loadBarbersForSelect(db);
-    await loadServices(db);
+    await loadBarbersForSelect(); // Recarrega barbeiros para selects
+    await loadServices(getFirestoreDb()); // Recarrega serviços
   });
   document.getElementById('servicesList').addEventListener('click', handleServiceActions);
 }
 
-export async function loadBarbersForSelect(db) {
+export async function loadBarbersForSelect() {
   console.log('Carregando barbeiros para selects...');
+  const db = getFirestoreDb(); // Obtém a instância do Firestore
+  if (!db) {
+      console.error("Firestore DB não disponível em loadBarbersForSelect.");
+      return;
+  }
+
   const selects = [
     document.getElementById('serviceBarber'),
     document.getElementById('scheduleBarber'),
     document.getElementById('barberFilter')
   ];
+
   selects.forEach(select => {
     if (select) {
-      select.innerHTML = '<option value="">Selecione um barbeiro</option>';
+      // Limpa e adiciona a opção padrão "Selecione um barbeiro" ou "Todos"
+      select.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      if (select.id === 'barberFilter') {
+        defaultOption.value = 'all';
+        defaultOption.textContent = 'Todos';
+      } else {
+        defaultOption.value = '';
+        defaultOption.textContent = 'Selecione um barbeiro';
+      }
+      select.appendChild(defaultOption);
     }
   });
+
   try {
     const barbersSnapshot = await getDocs(collection(db, 'barbers'));
     if (barbersSnapshot.empty) {
@@ -56,12 +74,18 @@ export async function loadBarbersForSelect(db) {
 }
 
 export async function loadServices(db) {
+  const currentDb = db || getFirestoreDb(); // Garante que db seja usado se passado, ou obtido
+  if (!currentDb) {
+      console.error("Firestore DB não disponível em loadServices.");
+      return;
+  }
+
   try {
     console.log('Carregando serviços...');
     const servicesList = document.getElementById('servicesList');
     servicesList.innerHTML = '';
     displayedServiceIds.clear();
-    const servicesSnapshot = await getDocs(collection(db, 'services'));
+    const servicesSnapshot = await getDocs(collection(currentDb, 'services')); // Usa currentDb
     if (servicesSnapshot.empty) {
       servicesList.innerHTML = '<p class="text-center">Nenhum serviço encontrado.</p>';
       return;
@@ -69,7 +93,7 @@ export async function loadServices(db) {
 
     for (const docSnapshot of servicesSnapshot.docs) {
       const service = docSnapshot.data();
-      const barberDoc = await getDoc(doc(db, 'barbers', service.barberId));
+      const barberDoc = await getDoc(doc(currentDb, 'barbers', service.barberId)); // Usa currentDb
       const barberName = barberDoc.exists() ? barberDoc.data().name : 'Desconhecido';
       const icon = '✂️';
       if (!displayedServiceIds.has(docSnapshot.id)) {
@@ -100,7 +124,7 @@ export async function loadServices(db) {
   }
 }
 
-async function addOrUpdateService(db, event) {
+async function addOrUpdateService(db, event) { // Recebe 'db' como argumento
   event.preventDefault();
   try {
     const serviceId = document.getElementById('serviceId').value;
@@ -138,8 +162,8 @@ async function addOrUpdateService(db, event) {
     if (!isValid) return;
 
     const id = serviceId || `service${Date.now()}`;
-    await setDoc(doc(db, 'services', id), { id, barberId, name, price, duration });
-    loadServices(db);
+    await setDoc(doc(db, 'services', id), { id, barberId, name, price, duration }); // Usa 'db'
+    loadServices(db); // Usa 'db'
     document.getElementById('serviceForm').reset();
     document.getElementById('serviceId').value = '';
     document.getElementById('serviceForm').querySelector('button[type="submit"]').textContent = 'Adicionar/Editar Serviço';
@@ -152,15 +176,21 @@ async function addOrUpdateService(db, event) {
 
 function handleServiceActions(event) {
   const target = event.target;
-  if (target.classList.contains('edit-service')) {
-    editService(target.closest('.service-card').dataset.id);
-  } else if (target.classList.contains('delete-service')) {
-    deleteService(target.closest('.service-card').dataset.id);
+  // Verifica se o clique foi em um botão de ação (edit ou delete)
+  if (target.closest('.btn-edit')) {
+    editService(target.closest('.btn-edit').dataset.id);
+  } else if (target.closest('.btn-delete')) {
+    deleteService(target.closest('.btn-delete').dataset.id);
   }
 }
 
 async function editService(serviceId) {
-  const serviceDoc = await getDoc(doc(db, 'services', serviceId));
+  const db = getFirestoreDb(); // Obtém a instância do Firestore
+  if (!db) {
+      console.error("Firestore DB não disponível em editService.");
+      return;
+  }
+  const serviceDoc = await getDoc(doc(db, 'services', serviceId)); // Usa 'db'
   if (serviceDoc.exists()) {
     const service = serviceDoc.data();
     document.getElementById('serviceId').value = serviceId;
@@ -169,22 +199,28 @@ async function editService(serviceId) {
     document.getElementById('servicePrice').value = service.price;
     document.getElementById('serviceDuration').value = service.duration;
     document.getElementById('serviceForm').querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
-    await loadBarbersForSelect(db);
+    await loadBarbersForSelect(); // Recarrega barbeiros para selects, usando getFirestoreDb() internamente
   }
 }
 
 async function deleteService(serviceId) {
-  const confirmed = await showPopup('Tem certeza que deseja excluir este serviço?', true, async () => {
-    const card = document.querySelector(`.service-card[data-id="${serviceId}"]`);
-    if (card) card.classList.add('fade-out');
-    setTimeout(async () => {
-      await deleteDoc(doc(db, 'services', serviceId));
+  const db = getFirestoreDb(); // Obtém a instância do Firestore
+  if (!db) {
+      console.error("Firestore DB não disponível em deleteService.");
+      return;
+  }
+  const confirmed = await showPopup('Tem certeza que deseja excluir este serviço?', true);
+  if (confirmed) {
+    try {
+      const card = document.querySelector(`.card[data-id="${serviceId}"]`); // Ajustado para .card
+      if (card) card.classList.add('fade-out');
+      await deleteDoc(doc(db, 'services', serviceId)); // Usa 'db'
       console.log('Serviço excluído com ID:', serviceId);
-      await loadServices(db);
-    }, 300);
-  });
-  if (!confirmed) {
-    const card = document.querySelector(`.service-card[data-id="${serviceId}"]`);
-    if (card) card.classList.remove('fade-out');
+      await loadServices(db); // Usa 'db'
+      showPopup('Serviço excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir serviço:', error);
+      showPopup('Erro ao excluir serviço: ' + error.message);
+    }
   }
 }

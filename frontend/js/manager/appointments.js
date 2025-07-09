@@ -3,7 +3,7 @@ import { showPopup, showSection, getFirestoreDb } from './utils.js';
 import { loadBarbersForSelect } from './services.js';
 import { registerRevenue } from './cashflow_enhanced.js';
 
-async function createServiceRevenue(db, appointment  ) {
+async function createServiceRevenue(db, appointment) {
     const { totalPrice, id: appointmentId, services } = appointment;
     const cashFlowData = {
         id: `cf_${Date.now()}`,
@@ -44,6 +44,7 @@ function initAppointments() {
     if (barberFilter) {
         barberFilter.addEventListener('change', (e) => {
             const date = document.getElementById('dateFilter').value;
+            // CORREÇÃO: Garante que o valor passado para loadAppointments é uma string
             loadAppointments(e.target.value, date);
         });
     } else {
@@ -76,20 +77,20 @@ async function loadAppointments(barberId = 'all', date = '') {
 
         let appointmentsQuery = collection(db, 'appointments');
 
-        // Verifica se barberId é um objeto e extrai o ID se for o caso
+        // CORREÇÃO PRINCIPAL: Garante que barberId é uma string antes de usar na query do Firestore.
+        // Se o valor do select for um objeto (como um documento do Firestore), extrai o ID.
         let actualBarberId = barberId;
         if (typeof barberId === 'object' && barberId !== null && barberId.id) {
             actualBarberId = barberId.id;
+        } else if (typeof barberId !== 'string') {
+            // Isso pode acontecer se o valor inicial do select não for uma string ou um objeto com .id
+            actualBarberId = 'all'; // Fallback para 'all' se não for string nem objeto com id
         }
 
         if (actualBarberId !== 'all') {
             appointmentsQuery = query(appointmentsQuery, where('barberId', '==', actualBarberId));
         }
         if (date) {
-            // Garante que a data seja uma string no formato 'YYYY-MM-DD'
-            // Se o input type='date' já retorna 'YYYY-MM-DD', esta linha apenas confirma.
-            // Se o Firestore armazena como Timestamp, a lógica de consulta precisaria de um objeto Timestamp.
-            // Assumindo que o Firestore armazena a data como string 'YYYY-MM-DD'.
             appointmentsQuery = query(appointmentsQuery, where("date", "==", date));
         }
 
@@ -106,8 +107,7 @@ async function loadAppointments(barberId = 'all', date = '') {
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         const barberMap = {};
         barbersSnapshot.forEach((docSnapshot) => {
-            const barber = docSnapshot.data();
-            barberMap[barber.id] = barber.name;
+            barberMap[docSnapshot.id] = docSnapshot.data().name; // Usar docSnapshot.id para mapear
         });
 
         let appointments = [];
@@ -159,9 +159,12 @@ async function loadAppointments(barberId = 'all', date = '') {
                 console.warn(`Erro ao buscar usuário ${appt.userId}, usando "Desconhecido":`, error);
             }
 
-            const barberName = barberMap[appt.barberId] || appt.barberId;
+            // Garante que appt.barberId é uma string válida para lookup
+            const barberName = barberMap[appt.barberId] || 'Barbeiro Desconhecido';
 
-            const services = appt.services ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
+            // Garante que appt.services é um array antes de mapear
+            const services = Array.isArray(appt.services) ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
+            
             const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
                             appt.status === 'completed' ? 'Realizado' :
                             appt.status === 'no-show' ? 'Não Compareceu' :
@@ -208,17 +211,17 @@ async function loadAppointments(barberId = 'all', date = '') {
                     <p><strong>Barbeiro:</strong> ${barberName}</p>
                     <p><strong>Serviços:</strong> ${services}</p>
                     <p><strong>📅 ${formattedDate}</strong> • <strong>🕐 ${appt.time}</strong></p>
-                    <p><strong>💵 R$ ${appt.totalPrice.toFixed(2)}</strong> • <strong>Status:</strong> ${statusPt}</p>
+                    <p><strong>💵 R$ ${appt.totalPrice ? appt.totalPrice.toFixed(2) : '0.00'}</strong> • <strong>Status:</strong> ${statusPt}</p>
                     <p><strong>Feedback:</strong> ${feedbackText}</p>
                 </div>
                 <div class="card-actions">
                     ${actions}
-                }
+                </div>
             `;
             appointmentsList.appendChild(card);
 
             totalAppointments++;
-            if (appt.status === 'completed') totalRevenue += appt.totalPrice;
+            if (appt.status === 'completed') totalRevenue += (appt.totalPrice || 0);
         }
 
         document.querySelectorAll('.btn-reminder').forEach(btn => {
@@ -234,7 +237,7 @@ async function loadAppointments(barberId = 'all', date = '') {
                     const message = encodeURIComponent(`Olá, ${clientName}! Seu agendamento com ${barberName} é em ${date} às ${time}. Confirme sua presença!`);
                     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phone}&text=${message}`;
 
-                    await setDoc(doc(db, 'appointments', apptId  ), { reminderSent: true }, { merge: true });
+                    await setDoc(doc(db, 'appointments', apptId), { reminderSent: true }, { merge: true });
 
                     btn.innerHTML = '<i class="fab fa-whatsapp"></i>';
                     btn.title = 'Lembrete já enviado';
@@ -309,7 +312,8 @@ async function markCompleted(id) {
                 // Registrar receita no fluxo de caixa apenas se não estava concluído antes
                 if (appt.status !== 'completed') {
                     try {
-                        const services = appt.services || [];
+                        // Certifica-se de que appt.services é um array antes de tentar mapear
+                        const services = Array.isArray(appt.services) ? appt.services : [];
                         const serviceNames = services.map(s => s.name).join(', ');
                         
                         await registerRevenue(db,

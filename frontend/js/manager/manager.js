@@ -2,8 +2,8 @@ import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/fir
 import { showPopup, showSection, setFirestoreDb, getFirestoreDb } from './utils.js';
 import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
-import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js';
-import { initSchedules } from './schedules.js';
+import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js'; // Renomeado para evitar conflito
+import { initSchedules, loadSchedules } from './schedules.js'; // Importe loadSchedules
 import { initStockModule, loadProducts, loadMovements } from './stock_new.js';
 import { initCashFlow, loadCashFlowData } from './cashflow_enhanced.js';
 import { initDashboard, loadDashboardData } from './dashboard.js';
@@ -163,7 +163,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else if (sectionId === "services-section") {
                             await loadServices();
                         } else if (sectionId === "appointments-section") {
-                            await loadAppointments();
+                            const db = getFirestoreDb(); // Obtém a instância do DB
+                            if (db) {
+                                await loadAppointments(db); // Passa a instância do DB
+                            } else {
+                                console.error("Firestore DB não disponível para carregar agendamentos.");
+                            }
                         } else if (sectionId === "schedules-section") {
                             await loadServiceBarbers();
                         }
@@ -223,10 +228,12 @@ auth.onAuthStateChanged((user) => {
     if (!isInitialized) {
         const app = initializeApp(firebaseConfig);
         const dbInstance = getFirestore(app);
-        setFirestoreDb(dbInstance);
+        setFirestoreDb(dbInstance); // Define a instância globalmente no utils.js
 
-        waitForFirestore().then((db) => {
+        waitForFirestore().then(async (db) => { // Use 'async' aqui
             console.log("DEBUG: Firestore instance (db) disponível no window.db:", !!db);
+            
+            // Inicialize todos os módulos passando a instância 'db'
             initBarbers(db);
             initServices(db);
             initAppointments(db);
@@ -234,21 +241,22 @@ auth.onAuthStateChanged((user) => {
             initStockModule(db);
             initCashFlow(db);
             initDashboard(db);
-            loadBarbers(db);
-            loadServices(db);
-            loadAppointments(db);
-            loadServiceBarbers(db);
+
+            // Carregue os dados iniciais
+            await loadBarbers(db); // Certifique-se de que barbeiros são carregados primeiro
+            await loadServiceBarbers(db); // Carrega barbeiros para selects de serviços e horários
+            await loadServices(db);
+            await loadAppointments(db); // Passa a instância do DB
             
             // Carregar dashboard por padrão
             showSection("dashboard-section");
-            loadDashboardData();
+            await loadDashboardData(); // Use await para garantir que o dashboard carregue completamente
             
             isInitialized = true;
-            isBarbersLoaded = true;
+            isBarbersLoaded = true; // Isso pode ser true após loadBarbers(db)
         }).catch(error => {
             console.error("DEBUG: Erro ao esperar Firestore:", error);
             showPopup("Erro ao inicializar o painel: " + error.message);
         });
     }
 });
-
