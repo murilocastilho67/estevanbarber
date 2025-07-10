@@ -2,8 +2,8 @@ import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/fir
 import { showPopup, showSection, setFirestoreDb, getFirestoreDb } from './utils.js';
 import { initBarbers, loadBarbers } from './barbers.js';
 import { initAppointments, loadAppointments } from './appointments.js';
-import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js'; // Renomeado para evitar conflito
-import { initSchedules, loadSchedules } from './schedules.js'; // Importe loadSchedules
+import { initServices, loadServices, loadBarbersForSelect as loadServiceBarbers } from './services.js';
+import { initSchedules } from './schedules.js';
 import { initStockModule, loadProducts, loadMovements } from './stock_new.js';
 import { initCashFlow, loadCashFlowData } from './cashflow_enhanced.js';
 import { initDashboard, loadDashboardData } from './dashboard.js';
@@ -44,7 +44,7 @@ async function handleLogout() {
         window.location.href = 'index.html';
     } catch (error) {
         console.error('Erro ao sair:', error);
-        showPopup('Erro ao sair: ' + error.message);
+        showPopup('Erro ao sair: ' + error.message, false, null, 'error');
     }
 }
 
@@ -154,23 +154,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // Carregamento específico para cada seção
                         if (sectionId === "dashboard-section") {
+                            console.log('Attempting to load dashboard data...');
                             await loadDashboardData();
+                            console.log('Dashboard data loaded.');
                         } else if (sectionId === "cashflow-section") {
+                            console.log('Attempting to load cash flow data...');
                             loadCashFlowData();
+                            console.log('Cash flow data loaded.');
                         } else if (sectionId === "barbers-section" && !isBarbersLoaded) {
+                            console.log('Attempting to load barbers data...');
                             await loadBarbers();
                             isBarbersLoaded = true;
+                            console.log('Barbers data loaded.');
                         } else if (sectionId === "services-section") {
+                            console.log('Attempting to load services data...');
                             await loadServices();
+                            console.log('Services data loaded.');
                         } else if (sectionId === "appointments-section") {
-                            const db = getFirestoreDb(); // Obtém a instância do DB
-                            if (db) {
-                                await loadAppointments(db); // Passa a instância do DB
-                            } else {
-                                console.error("Firestore DB não disponível para carregar agendamentos.");
-                            }
+                            console.log('Attempting to load appointments data...');
+                            // A chamada para loadAppointments() será feita pelo initAppointments() quando o navAppointments for clicado
+                            // Não chame loadAppointments() aqui para evitar duplicação
+                            console.log('Appointments data will be loaded when section is activated.');
                         } else if (sectionId === "schedules-section") {
-                            await loadServiceBarbers();
+                            console.log('Attempting to load service barbers data for schedules...');
+                            await loadServiceBarbers(); // Chamada sem argumentos
+                            console.log('Service barbers data for schedules loaded.');
                         }
                     }
 
@@ -226,37 +234,50 @@ auth.onAuthStateChanged((user) => {
     }
     console.log("DEBUG: Usuário autenticado:", user.email);
     if (!isInitialized) {
+        console.log("DEBUG: Inicializando Firebase App e Firestore...");
         const app = initializeApp(firebaseConfig);
         const dbInstance = getFirestore(app);
-        setFirestoreDb(dbInstance); // Define a instância globalmente no utils.js
+        setFirestoreDb(dbInstance);
+        console.log("DEBUG: Firebase App e Firestore inicializados.");
 
-        waitForFirestore().then(async (db) => { // Use 'async' aqui
+        waitForFirestore().then((db) => {
             console.log("DEBUG: Firestore instance (db) disponível no window.db:", !!db);
-            
-            // Inicialize todos os módulos passando a instância 'db'
+            console.log("DEBUG: Chamando initBarbers...");
             initBarbers(db);
+            console.log("DEBUG: Chamando initServices...");
             initServices(db);
+            console.log("DEBUG: Chamando initAppointments...");
             initAppointments(db);
+            console.log("DEBUG: Chamando initSchedules...");
             initSchedules(db);
+            console.log("DEBUG: Chamando initStockModule...");
             initStockModule(db);
+            console.log("DEBUG: Chamando initCashFlow...");
             initCashFlow(db);
+            console.log("DEBUG: Chamando initDashboard...");
             initDashboard(db);
-
-            // Carregue os dados iniciais
-            await loadBarbers(db); // Certifique-se de que barbeiros são carregados primeiro
-            await loadServiceBarbers(db); // Carrega barbeiros para selects de serviços e horários
-            await loadServices(db);
-            await loadAppointments(db); // Passa a instância do DB
+            
+            // Chamadas de carregamento inicial sem passar 'db' diretamente, pois os módulos já o obtêm via getFirestoreDb()
+            console.log("DEBUG: Chamando loadBarbers...");
+            loadBarbers();
+            console.log("DEBUG: Chamando loadServices...");
+            loadServices();
+            // REMOVIDO: loadAppointments() aqui para evitar duplicação
+            console.log("DEBUG: Chamando loadServiceBarbers...");
+            loadServiceBarbers();
             
             // Carregar dashboard por padrão
+            console.log("DEBUG: Mostrando seção do dashboard...");
             showSection("dashboard-section");
-            await loadDashboardData(); // Use await para garantir que o dashboard carregue completamente
+            console.log("DEBUG: Carregando dados do dashboard...");
+            loadDashboardData();
+            console.log("DEBUG: Dados do dashboard carregados.");
             
             isInitialized = true;
-            isBarbersLoaded = true; // Isso pode ser true após loadBarbers(db)
+            isBarbersLoaded = true;
         }).catch(error => {
-            console.error("DEBUG: Erro ao esperar Firestore:", error);
-            showPopup("Erro ao inicializar o painel: " + error.message);
+            console.error("DEBUG: Erro ao esperar Firestore ou inicializar módulos:", error);
+            showPopup('Erro ao inicializar o painel: ' + error.message, false, null, 'error');
         });
     }
 });

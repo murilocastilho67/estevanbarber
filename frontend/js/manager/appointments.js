@@ -19,6 +19,9 @@ async function createServiceRevenue(db, appointment) {
     console.log('Receita de serviço criada:', cashFlowData);
 }
 
+// Variável para controlar se os listeners já foram inicializados
+let appointmentsListenersInitialized = false;
+
 function initAppointments() {
     console.log("Inicializando eventos de agendamentos...");
     const db = getFirestoreDb();
@@ -28,7 +31,7 @@ function initAppointments() {
     }
     
     const navAppointments = document.getElementById('nav-appointments');
-    if (navAppointments) {
+    if (navAppointments && !appointmentsListenersInitialized) { // Adiciona o check aqui
         navAppointments.addEventListener('click', async (e) => {
             e.preventDefault();
             console.log('Clicou em Agendamentos');
@@ -36,29 +39,29 @@ function initAppointments() {
             await loadBarbersForSelect(db); // Carrega os barbeiros para o filtro
             loadAppointments();
         });
-    } else {
+
+        const barberFilter = document.getElementById('barberFilter');
+        if (barberFilter) {
+            barberFilter.addEventListener('change', (e) => {
+                const date = document.getElementById('dateFilter').value;
+                loadAppointments(e.target.value, date);
+            });
+        } else {
+            console.error('Elemento barberFilter não encontrado');
+        }
+
+        const dateFilter = document.getElementById('dateFilter');
+        if (dateFilter) {
+            dateFilter.addEventListener('change', (e) => {
+                const barberId = document.getElementById('barberFilter').value;
+                loadAppointments(barberId, e.target.value);
+            });
+        } else {
+            console.error('Elemento dateFilter não encontrado');
+        }
+        appointmentsListenersInitialized = true; // Marca como inicializado
+    } else if (!navAppointments) {
         console.error('Elemento nav-appointments não encontrado');
-    }
-
-    const barberFilter = document.getElementById('barberFilter');
-    if (barberFilter) {
-        barberFilter.addEventListener('change', (e) => {
-            const date = document.getElementById('dateFilter').value;
-            // CORREÇÃO: Garante que o valor passado para loadAppointments é uma string
-            loadAppointments(e.target.value, date);
-        });
-    } else {
-        console.error('Elemento barberFilter não encontrado');
-    }
-
-    const dateFilter = document.getElementById('dateFilter');
-    if (dateFilter) {
-        dateFilter.addEventListener('change', (e) => {
-            const barberId = document.getElementById('barberFilter').value;
-            loadAppointments(barberId, e.target.value);
-        });
-    } else {
-        console.error('Elemento dateFilter não encontrado');
     }
 }
 
@@ -73,18 +76,19 @@ async function loadAppointments(barberId = 'all', date = '') {
         console.log("Tipo de barberId:", typeof barberId, "Tipo de date:", typeof date);
 
         const appointmentsList = document.getElementById('appointmentsList');
-        appointmentsList.innerHTML = '';
+        if (!appointmentsList) {
+            console.error('Elemento appointmentsList não encontrado.');
+            return;
+        }
+        appointmentsList.innerHTML = ''; // Limpa a lista antes de preencher
 
         let appointmentsQuery = collection(db, 'appointments');
 
-        // CORREÇÃO PRINCIPAL: Garante que barberId é uma string antes de usar na query do Firestore.
-        // Se o valor do select for um objeto (como um documento do Firestore), extrai o ID.
         let actualBarberId = barberId;
         if (typeof barberId === 'object' && barberId !== null && barberId.id) {
             actualBarberId = barberId.id;
         } else if (typeof barberId !== 'string') {
-            // Isso pode acontecer se o valor inicial do select não for uma string ou um objeto com .id
-            actualBarberId = 'all'; // Fallback para 'all' se não for string nem objeto com id
+            actualBarberId = 'all';
         }
 
         if (actualBarberId !== 'all') {
@@ -107,7 +111,7 @@ async function loadAppointments(barberId = 'all', date = '') {
         const barbersSnapshot = await getDocs(collection(db, 'barbers'));
         const barberMap = {};
         barbersSnapshot.forEach((docSnapshot) => {
-            barberMap[docSnapshot.id] = docSnapshot.data().name; // Usar docSnapshot.id para mapear
+            barberMap[docSnapshot.id] = docSnapshot.data().name;
         });
 
         let appointments = [];
@@ -123,24 +127,10 @@ async function loadAppointments(barberId = 'all', date = '') {
             return dateA - dateB;
         });
 
-        // Limpar a lista antes de adicionar novos elementos para evitar duplicação
-        appointmentsList.innerHTML = '';
-        
-        // Usar um Set para rastrear IDs únicos e evitar duplicação
-        const processedIds = new Set();
-
         let totalAppointments = 0;
         let totalRevenue = 0;
 
         for (const appt of appointments) {
-            // Verificar se o agendamento já foi processado
-            if (processedIds.has(appt.id)) {
-                console.warn(`Agendamento duplicado detectado e ignorado: ${appt.id}`);
-                continue;
-            }
-            
-            // Adicionar o ID ao conjunto de processados
-            processedIds.add(appt.id);
             let userName = 'Desconhecido';
             let userPhone = '';
             try {
@@ -159,10 +149,7 @@ async function loadAppointments(barberId = 'all', date = '') {
                 console.warn(`Erro ao buscar usuário ${appt.userId}, usando "Desconhecido":`, error);
             }
 
-            // Garante que appt.barberId é uma string válida para lookup
             const barberName = barberMap[appt.barberId] || 'Barbeiro Desconhecido';
-
-            // Garante que appt.services é um array antes de mapear
             const services = Array.isArray(appt.services) ? appt.services.map(s => s.name).join(', ') : 'Nenhum serviço';
             
             const statusPt = appt.status === 'confirmed' ? 'Confirmado' :
@@ -279,7 +266,6 @@ async function cancelAppointment(id) {
             await setDoc(doc(db, 'appointments', id), { status: 'canceled' }, { merge: true });
             console.log('Agendamento cancelado:', id);
             
-            // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
             await loadAppointments(barberId, date);
@@ -309,37 +295,29 @@ async function markCompleted(id) {
                 const appt = apptSnap.data();
                 transaction.set(apptRef, { status: 'completed' }, { merge: true });
 
-                // Registrar receita no fluxo de caixa apenas se não estava concluído antes
                 if (appt.status !== 'completed') {
-                    try {
-                        // Certifica-se de que appt.services é um array antes de tentar mapear
-                        const services = Array.isArray(appt.services) ? appt.services : [];
-                        const serviceNames = services.map(s => s.name).join(', ');
-                        
-                        await registerRevenue(db,
-                            `Serviços realizados: ${serviceNames}`,
-                            appt.totalPrice || 0,
-                            'services',
-                            'appointment_completed',
-                            {
-                                appointmentId: id,
-                                services: services,
-                                barberId: appt.barberId,
-                                userId: appt.userId,
-                                date: appt.date,
-                                time: appt.time
-                            }
-                        );
-                        console.log('💰 Receita de serviço registrada no fluxo de caixa');
-                    } catch (cashflowError) {
-                        console.warn('⚠️ Erro ao registrar receita no fluxo de caixa:', cashflowError);
-                        // Não interromper o processo se houver erro no fluxo de caixa
-                    }
+                    const services = Array.isArray(appt.services) ? appt.services : [];
+                    const serviceNames = services.map(s => s.name).join(', ');
+                    
+                    await registerRevenue(
+                        `Serviços realizados: ${serviceNames}`,
+                        appt.totalPrice || 0,
+                        'services',
+                        'appointment_completed',
+                        {
+                            appointmentId: id,
+                            services: services,
+                            barberId: appt.barberId,
+                            userId: appt.userId,
+                            date: appt.date,
+                            time: appt.time
+                        }
+                    );
+                    console.log('💰 Receita de serviço registrada no fluxo de caixa');
                 }
             });
             console.log('Agendamento marcado como concluído:', id);
             
-            // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
             await loadAppointments(barberId, date);
@@ -363,7 +341,6 @@ async function markNoShow(id) {
             await setDoc(doc(db, 'appointments', id), { status: 'no-show' }, { merge: true });
             console.log('Agendamento marcado como não compareceu:', id);
             
-            // Recarregar a lista
             const barberId = document.getElementById('barberFilter')?.value || 'all';
             const date = document.getElementById('dateFilter')?.value || '';
             await loadAppointments(barberId, date);

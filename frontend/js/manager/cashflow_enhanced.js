@@ -34,7 +34,7 @@ const cashflowState = {
 const defaultCategories = [
     // Categorias de Despesas
     { id: 'rent', name: 'Aluguel', type: 'expense', icon: 'fas fa-home' },
-    { id: 'utilities', name: 'Contas (Luz, Água, Internet )', type: 'expense', icon: 'fas fa-bolt' },
+    { id: 'utilities', name: 'Contas (Luz, Água, Internet)', type: 'expense', icon: 'fas fa-bolt' },
     { id: 'salaries', name: 'Salários', type: 'expense', icon: 'fas fa-users' },
     { id: 'supplies', name: 'Materiais e Suprimentos', type: 'expense', icon: 'fas fa-box' },
     { id: 'marketing', name: 'Marketing', type: 'expense', icon: 'fas fa-bullhorn' },
@@ -62,7 +62,7 @@ export function initCashFlow() {
     console.log("✅ Firestore conectado ao módulo de fluxo de caixa");
     
     // Inicializar categorias padrão
-    initializeCategories(db);
+    initializeCategories(); // Não precisa passar db, pois getFirestoreDb() é usado internamente
     
     // Configurar navegação entre views
     setupNavigation();
@@ -78,20 +78,26 @@ export function initCashFlow() {
 }
 
 // Exportar função para carregar o resumo quando a seção for ativada
-export function loadCashFlowData() {
+export async function loadCashFlowData() {
     const db = getFirestoreDb();
     if (!db) {
         console.error("❌ Firestore não inicializado no módulo de fluxo de caixa ao carregar dados.");
         return;
     }
-    loadTransactions(db).then(() => {
-        if (cashflowState.currentView === 'summary') {
-            loadSummary();
-        }
-    });
+    await loadTransactions(); // Aguarda o carregamento das transações
+    if (cashflowState.currentView === 'summary') {
+        loadSummary();
+    } else if (cashflowState.currentView === 'expenses') {
+        loadRecentExpenses();
+    }
 }
 
-async function initializeCategories(db) {
+async function initializeCategories() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("❌ Firestore não inicializado em initializeCategories");
+        return;
+    }
     try {
         // Verificar se as categorias já existem
         const categoriesSnapshot = await getDocs(collection(db, 'expense_categories'));
@@ -111,7 +117,7 @@ async function initializeCategories(db) {
         }
         
         // Carregar categorias
-        await loadCategories(db);
+        await loadCategories();
         
     } catch (error) {
         console.error('❌ Erro ao inicializar categorias:', error);
@@ -121,13 +127,18 @@ async function initializeCategories(db) {
             cashflowState.categories = defaultCategories;
             updateCategorySelects();
         } else {
-            showPopup('Erro ao inicializar categorias: ' + error.message);
+            showPopup('Erro ao inicializar categorias: ' + error.message, false, null, 'error');
         }
     }
 }
 
 // Carregar categorias
-async function loadCategories(db) {
+async function loadCategories() {
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("❌ Firestore não inicializado em loadCategories");
+        return;
+    }
     try {
         const snapshot = await getDocs(collection(db, 'expense_categories'));
         
@@ -150,7 +161,7 @@ async function loadCategories(db) {
             cashflowState.categories = defaultCategories;
             updateCategorySelects();
         } else {
-            showPopup('Erro ao carregar categorias: ' + error.message);
+            showPopup('Erro ao carregar categorias: ' + error.message, false, null, 'error');
         }
     }
 }
@@ -223,13 +234,8 @@ function switchView(view) {
     
     cashflowState.currentView = view;
     
-    if (view === 'summary') {
-        loadSummary();
-    } else if (view === 'expenses') {
-        loadRecentExpenses();
-    } else if (view === 'categories') {
-        loadCategoriesView();
-    }
+    // Recarregar dados após a troca de view
+    loadCashFlowData();
 }
 
 // Configurar formulário de despesas
@@ -284,14 +290,14 @@ function setupFilters() {
             }
             
             updateDateFilters();
-            loadSummary();
+            loadCashFlowData(); // Recarrega todos os dados e atualiza a view
         });
     }
     
     if (typeFilter) {
         typeFilter.addEventListener('change', (e) => {
             cashflowState.filters.type = e.target.value;
-            loadSummary();
+            loadCashFlowData(); // Recarrega todos os dados e atualiza a view
         });
     }
     
@@ -299,7 +305,7 @@ function setupFilters() {
         startDateFilter.addEventListener('change', (e) => {
             cashflowState.filters.startDate = e.target.value;
             if (cashflowState.filters.period === 'custom') {
-                loadSummary();
+                loadCashFlowData(); // Recarrega todos os dados e atualiza a view
             }
         });
     }
@@ -308,7 +314,7 @@ function setupFilters() {
         endDateFilter.addEventListener('change', (e) => {
             cashflowState.filters.endDate = e.target.value;
             if (cashflowState.filters.period === 'custom') {
-                loadSummary();
+                loadCashFlowData(); // Recarrega todos os dados e atualiza a view
             }
         });
     }
@@ -325,27 +331,37 @@ function updateDateFilters() {
     
     switch (period) {
         case 'today':
-            startDate = endDate = today;
+            startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
             break;
         case 'week':
             startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-            endDate = today;
+            startDate.setDate(today.getDate() - today.getDay()); // Início da semana (domingo)
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(today);
+            endDate.setDate(today.getDate() + (6 - today.getDay())); // Fim da semana (sábado)
+            endDate.setHours(23, 59, 59, 999);
             break;
         case 'month':
             startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
             endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            endDate.setHours(23, 59, 59, 999);
             break;
         case 'year':
             startDate = new Date(today.getFullYear(), 0, 1);
+            startDate.setHours(0, 0, 0, 0);
             endDate = new Date(today.getFullYear(), 11, 31);
+            endDate.setHours(23, 59, 59, 999);
             break;
         case 'custom':
-            // Não alterar as datas para período customizado
+            // Não alterar as datas para período customizado, elas vêm dos inputs
             return;
         default:
             startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
             endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            endDate.setHours(23, 59, 59, 999);
     }
     
     const startDateInput = document.getElementById('cashflow-start-date');
@@ -363,8 +379,8 @@ function updateDateFilters() {
 }
 
 // Carregar transações
-async function loadTransactions(dbInstance) {
-    const db = dbInstance || getFirestoreDb();
+async function loadTransactions() {
+    const db = getFirestoreDb();
     if (!db) {
         console.error("❌ Firestore não inicializado no módulo de fluxo de caixa ao carregar transações.");
         return;
@@ -383,9 +399,15 @@ async function loadTransactions(dbInstance) {
         cashflowState.transactions = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
+            // Converte a data para o formato YYYY-MM-DD se for um Timestamp do Firestore
+            let transactionDate = data.date;
+            if (transactionDate instanceof Timestamp) {
+                transactionDate = transactionDate.toDate().toISOString().split('T')[0];
+            }
             cashflowState.transactions.push({
                 id: doc.id,
-                ...data
+                ...data,
+                date: transactionDate // Garante que a data esteja no formato correto
             });
         });
         
@@ -393,7 +415,7 @@ async function loadTransactions(dbInstance) {
         
     } catch (error) {
         console.error('❌ Erro ao carregar transações:', error);
-        showPopup('Erro ao carregar transações: ' + error.message);
+        showPopup('Erro ao carregar transações: ' + error.message, false, null, 'error');
     } finally {
         cashflowState.isLoading = false;
     }
@@ -430,12 +452,11 @@ function filterTransactions() {
     
     // Filtro por data
     if (cashflowState.filters.startDate && cashflowState.filters.endDate) {
-        const startDate = new Date(cashflowState.filters.startDate);
-        const endDate = new Date(cashflowState.filters.endDate);
-        endDate.setHours(23, 59, 59, 999); // Incluir o dia inteiro
+        const startDate = new Date(cashflowState.filters.startDate + 'T00:00:00'); // Adiciona T00:00:00 para evitar problemas de fuso horário
+        const endDate = new Date(cashflowState.filters.endDate + 'T23:59:59.999'); // Adiciona T23:59:59.999 para incluir o dia inteiro
         
         filtered = filtered.filter(transaction => {
-            const transactionDate = new Date(transaction.date);
+            const transactionDate = new Date(transaction.date + 'T00:00:00'); // Garante que a data da transação também seja tratada como início do dia
             return transactionDate >= startDate && transactionDate <= endDate;
         });
     }
@@ -565,12 +586,12 @@ function updateChart(transactions) {
     }
 }
 
-// Renderizar lista de transações
-function renderTransactions(transactions) {
+// Renderizar lista de transações (usado tanto para resumo quanto para despesas recentes)
+function renderTransactions(transactionsToRender) {
     const container = document.getElementById('cashflow-transactions-list');
     if (!container) return;
     
-    if (transactions.length === 0) {
+    if (transactionsToRender.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-chart-line"></i>
@@ -581,39 +602,62 @@ function renderTransactions(transactions) {
         return;
     }
     
-    container.innerHTML = transactions.map(transaction => {
+    container.innerHTML = transactionsToRender.map(transaction => {
         const category = cashflowState.categories.find(cat => cat.id === transaction.category);
-        const categoryName = category ? category.name : 'Outros';
         const categoryIcon = category ? category.icon : 'fas fa-circle';
         
-        const date = new Date(transaction.date);
+        const date = new Date(transaction.date + 'T00:00:00'); // Garante que a data seja tratada como início do dia
         const formattedDate = date.toLocaleDateString('pt-BR');
         
         const isRevenue = transaction.type === 'revenue';
+
+        // Traduzir a origem
+        let translatedSource = transaction.source;
+        if (transaction.source === 'appointment_completed') {
+            translatedSource = 'Serviço Realizado';
+        }
         
+        const formattedDueDate = transaction.dueDate ? new Date(transaction.dueDate + 'T00:00:00').toLocaleDateString('pt-BR') : null;
+        const formattedPaymentDate = transaction.paymentDate ? new Date(transaction.paymentDate + 'T00:00:00').toLocaleDateString('pt-BR') : null;
+
+        // Conteúdo da descrição principal
+        let mainDescription = transaction.description;
+        // Se for uma receita de serviço, a descrição já deve ser suficiente, não precisa da categoria separada
+        if (transaction.source === 'appointment_completed' && category && category.id === 'services') {
+            // A descrição já vem como 'Serviço de [nome do serviço]', então não precisamos da categoria aqui
+            // A categoria 'Serviços Realizados' já é inferida pela origem
+            mainDescription = transaction.description; // Mantém a descrição original do agendamento
+        } else {
+            // Para outras transações, inclui a categoria na descrição se não for redundante
+            mainDescription = `${transaction.description} (${category ? category.name : 'Outros'})`;
+        }
+
         return `
             <div class="transaction-card ${transaction.type}">
                 <div class="transaction-icon">
                     <i class="${categoryIcon}"></i>
                 </div>
                 <div class="transaction-info">
-                    <h4>${transaction.description}</h4>
-                    <p class="transaction-category">${categoryName}</p>
-                    <p class="transaction-date">Lançamento: ${formattedDate}</p>
-                    ${transaction.source ? `<p class="transaction-source">Origem: ${transaction.source}</p>` : ''}
-                    ${transaction.dueDate ? `<p class="transaction-due">Vencimento: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}</p>` : ''}
-                    ${transaction.paymentDate ? `<p class="transaction-payment">Pagamento: ${new Date(transaction.paymentDate).toLocaleDateString('pt-BR')}</p>` : ''}
+                    <h4>${mainDescription}</h4>
+                    <p class="transaction-date-info">
+                        <span>Lançamento: ${formattedDate}</span>
+                        ${formattedDueDate ? `<span>Vencimento: ${formattedDueDate}</span>` : ''}
+                        ${formattedPaymentDate ? `<span>Pagamento: ${formattedPaymentDate}</span>` : ''}
+                    </p>
+                    ${transaction.source ? `<p class="transaction-source">Origem: ${translatedSource}</p>` : ''}
                 </div>
-                <div class="transaction-amount ${transaction.type}">
-                    ${isRevenue ? '+' : '-'} R$ ${(transaction.amount || 0).toFixed(2)}
-                </div>
-                <div class="transaction-actions">
-                    <button class="action-btn edit" onclick="editTransaction('${transaction.id}')" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete" onclick="deleteTransaction('${transaction.id}')" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="transaction-footer">
+                    <div class="transaction-amount ${transaction.type}">
+                        ${isRevenue ? '+' : '-'} R$ ${(transaction.amount || 0).toFixed(2)}
+                    </div>
+                    <div class="transaction-actions">
+                        <button class="action-btn edit" onclick="editTransaction('${transaction.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteTransaction('${transaction.id}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -625,6 +669,7 @@ async function saveExpense() {
     const db = getFirestoreDb();
     if (!db) {
         console.error("❌ Firestore não inicializado no módulo de fluxo de caixa ao salvar despesa.");
+        showPopup('Erro: Firestore não inicializado.', false, null, 'error');
         return;
     }
     if (cashflowState.isLoading) return;
@@ -640,7 +685,7 @@ async function saveExpense() {
         const paymentDate = document.getElementById('expense-payment-date')?.value || null;
         
         if (!description || !category || amount <= 0 || !date) {
-            showPopup('Todos os campos obrigatórios devem ser preenchidos');
+            showPopup('Todos os campos obrigatórios (Descrição, Categoria, Valor, Data) devem ser preenchidos.', false, null, 'warning');
             return;
         }
         
@@ -664,25 +709,24 @@ async function saveExpense() {
         await setDoc(doc(db, 'cash_flow_transactions', transactionId), transactionData);
         
         console.log('✅ Despesa salva com sucesso');
-        showPopup('Despesa registrada com sucesso!');
+        showPopup('Despesa registrada com sucesso!', false, null, 'success');
         
         // Limpar formulário
         document.getElementById('expense-form').reset();
         // Redefinir data padrão
         document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
         
-        // Recarregar dados
+        // Recarregar todos os dados e atualizar a view
         await loadTransactions();
-        
         if (cashflowState.currentView === 'expenses') {
-            await loadRecentExpenses();
+            loadRecentExpenses();
         } else if (cashflowState.currentView === 'summary') {
             loadSummary();
         }
         
     } catch (error) {
         console.error('❌ Erro ao salvar despesa:', error);
-        showPopup('Erro ao salvar despesa: ' + error.message);
+        showPopup('Erro ao salvar despesa: ' + error.message, false, null, 'error');
     } finally {
         cashflowState.isLoading = false;
     }
@@ -690,79 +734,27 @@ async function saveExpense() {
 
 // Carregar despesas recentes
 async function loadRecentExpenses() {
-    try {
-        console.log('📋 Carregando despesas recentes...');
-        
-        // Filtrar apenas despesas dos últimos 30 dias
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const recentExpenses = cashflowState.transactions.filter(transaction => {
-            const transactionDate = new Date(transaction.date);
-            return transaction.type === 'expense' && transactionDate >= thirtyDaysAgo;
-        });
-        
-        renderRecentExpenses(recentExpenses);
-        
-    } catch (error) {
-        console.error('❌ Erro ao carregar despesas recentes:', error);
-    }
-}
+    console.log('📋 Carregando despesas recentes...');
+    
+    // Filtrar apenas despesas dos últimos 30 dias
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0); // Zera a hora para comparação
+    
+    const recentExpenses = cashflowState.transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date + 'T00:00:00'); // Garante que a data da transação seja tratada como início do dia
+        return transaction.type === 'expense' && transactionDate >= thirtyDaysAgo;
+    });
+    
+    // Ordena as despesas recentes da mais nova para a mais antiga
+    recentExpenses.sort((a, b) => new Date(b.date + 'T00:00:00') - new Date(a.date + 'T00:00:00'));
 
-// Renderizar despesas recentes
-function renderRecentExpenses(expenses) {
-    const container = document.getElementById('recent-expenses-list');
-    if (!container) return;
-    
-    if (expenses.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-receipt"></i>
-                <h3>Nenhuma despesa recente</h3>
-                <p>As despesas dos últimos 30 dias aparecerão aqui</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = expenses.map(expense => {
-        const category = cashflowState.categories.find(cat => cat.id === expense.category);
-        const categoryName = category ? category.name : 'Outros';
-        
-        const date = new Date(expense.date);
-        const formattedDate = date.toLocaleDateString('pt-BR');
-        
-        const dueDate = expense.dueDate ? new Date(expense.dueDate).toLocaleDateString('pt-BR') : null;
-        const paymentDate = expense.paymentDate ? new Date(expense.paymentDate).toLocaleDateString('pt-BR') : null;
-        
-        return `
-            <div class="expense-card">
-                <div class="expense-info">
-                    <h4>${expense.description}</h4>
-                    <p class="expense-category">${categoryName}</p>
-                    <p class="expense-date">Lançamento: ${formattedDate}</p>
-                    ${dueDate ? `<p class="expense-due">Vencimento: ${dueDate}</p>` : ''}
-                    ${paymentDate ? `<p class="expense-payment">Pagamento: ${paymentDate}</p>` : ''}
-                </div>
-                <div class="expense-amount">
-                    R$ ${(expense.amount || 0).toFixed(2)}
-                </div>
-                <div class="expense-actions">
-                    <button class="action-btn edit" onclick="editTransaction('${expense.id}')" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete" onclick="deleteTransaction('${expense.id}')" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
+    renderTransactions(recentExpenses); // Usa renderTransactions para exibir
 }
 
 // Registrar receita automaticamente (chamada por outros módulos)
-export async function registerRevenue(dbInstance, description, amount, category = 'other_revenue', source = 'automatic', additionalData = {}) {
-    const db = dbInstance || getFirestoreDb();
+export async function registerRevenue(description, amount, category = 'other_revenue', source = 'automatic', additionalData = {}) {
+    const db = getFirestoreDb();
     if (!db) {
         console.error('❌ Firestore não inicializado no módulo de fluxo de caixa');
         return;
@@ -790,22 +782,25 @@ export async function registerRevenue(dbInstance, description, amount, category 
         console.log('✅ Receita registrada automaticamente');
         
         // Recarregar dados se estivermos na view de fluxo de caixa
+        await loadTransactions();
         if (cashflowState.currentView === 'summary') {
-            await loadTransactions();
             loadSummary();
+        } else if (cashflowState.currentView === 'expenses') {
+            loadRecentExpenses();
         }
         
         return transactionId;
         
     } catch (error) {
         console.error('❌ Erro ao registrar receita automática:', error);
+        showPopup('Erro ao registrar receita: ' + error.message, false, null, 'error');
         throw error;
     }
 }
 
 // Registrar despesa automaticamente (chamada por outros módulos)
-export async function registerExpense(dbInstance, description, amount, category = 'other_expense', source = 'automatic', additionalData = {}) {
-    const db = dbInstance || getFirestoreDb();
+export async function registerExpense(description, amount, category = 'other_expense', source = 'automatic', additionalData = {}) {
+    const db = getFirestoreDb();
     if (!db) {
         console.error('❌ Firestore não inicializado no módulo de fluxo de caixa');
         return;
@@ -833,15 +828,18 @@ export async function registerExpense(dbInstance, description, amount, category 
         console.log('✅ Despesa registrada automaticamente');
         
         // Recarregar dados se estivermos na view de fluxo de caixa
+        await loadTransactions();
         if (cashflowState.currentView === 'summary') {
-            await loadTransactions();
             loadSummary();
+        } else if (cashflowState.currentView === 'expenses') {
+            loadRecentExpenses();
         }
         
         return transactionId;
         
     } catch (error) {
         console.error('❌ Erro ao registrar despesa automática:', error);
+        showPopup('Erro ao registrar despesa: ' + error.message, false, null, 'error');
         throw error;
     }
 }
@@ -851,7 +849,7 @@ window.editTransaction = function(transactionId) {
     const transaction = cashflowState.transactions.find(t => t.id === transactionId);
     if (transaction) {
         // TODO: Implementar edição de transação
-        showPopup('Funcionalidade de edição em desenvolvimento');
+        showPopup('Funcionalidade de edição em desenvolvimento', false, null, 'info');
     }
 };
 
@@ -859,36 +857,36 @@ window.deleteTransaction = async function(transactionId) {
     const db = getFirestoreDb();
     if (!db) {
         console.error("❌ Firestore não inicializado no módulo de fluxo de caixa ao excluir transação.");
+        showPopup('Erro: Firestore não inicializado.', false, null, 'error');
         return;
     }
     const transaction = cashflowState.transactions.find(t => t.id === transactionId);
     if (!transaction) return;
     
-    const confirmed = confirm(`Tem certeza que deseja excluir a transação "${transaction.description}"?`);
-    if (!confirmed) return;
-    
-    try {
-        await deleteDoc(doc(db, 'cash_flow_transactions', transactionId));
-        showPopup('Transação excluída com sucesso!');
-        await loadTransactions();
-        
-        if (cashflowState.currentView === 'expenses') {
-            await loadRecentExpenses();
-        } else if (cashflowState.currentView === 'summary') {
-            loadSummary();
+    const confirmed = await showPopup(`Tem certeza que deseja excluir a transação "${transaction.description}"?`, true);
+    if (confirmed) {
+        try {
+            await deleteDoc(doc(db, 'cash_flow_transactions', transactionId));
+            showPopup('Transação excluída com sucesso!', false, null, 'success');
+            await loadTransactions();
+            
+            if (cashflowState.currentView === 'expenses') {
+                loadRecentExpenses();
+            } else if (cashflowState.currentView === 'summary') {
+                loadSummary();
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao excluir transação:', error);
+            showPopup('Erro ao excluir transação: ' + error.message, false, null, 'error');
         }
-        
-    } catch (error) {
-        console.error('❌ Erro ao excluir transação:', error);
-        showPopup('Erro ao excluir transação: ' + error.message);
     }
 };
 
 // Exportar função de carregamento de resumo para uso externo
 export function loadCashFlowSummary() {
-    if (cashflowState.currentView === 'summary') {
-        loadSummary();
-    }
+    // Esta função agora apenas chama loadCashFlowData para recarregar tudo
+    loadCashFlowData();
 }
 
 // Exportar estado para debug

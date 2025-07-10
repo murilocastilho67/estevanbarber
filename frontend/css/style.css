@@ -1678,3 +1678,73 @@ button.btn-theme:hover {
     }
 }
 
+
+
+
+/* ==========================================================================
+   6. Estilos para Transações (Fluxo de Caixa)
+   ========================================================================== */
+
+.transaction-card {
+    display: flex;
+    flex-direction: column; /* Empilha as seções do card */
+    gap: 1rem; /* Espaçamento entre as seções */
+    padding: 1.5rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.transaction-card.revenue {
+    border-left-color: #27ae60;
+}
+
+.transaction-card.expense {
+    border-left-color: #e74c3c;
+}
+
+.transaction-info {
+    flex-grow: 1;
+}
+
+.transaction-date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.transaction-date-info span {
+    display: block;
+}
+
+.transaction-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.transaction-amount {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.transaction-amount.revenue {
+    color: #27ae60;
+}
+
+.transaction-amount.expense {
+    color: #e74c3c;
+}
+
+.transaction-actions .action-btn.edit {
+    background-color: #a9d6e5; /* Azul claro */
+}
+
+.transaction-actions .action-btn.delete {
+    background-color: #e9ecef; /* Cinza claro */
+}
+
+#expense-form button[type="submit"] {
+    background-color: var(--primary-color);
+    color: #fff;
+}
