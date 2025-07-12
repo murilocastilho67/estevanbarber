@@ -1,16 +1,16 @@
-import { 
-    collection, 
-    getDocs, 
-    doc, 
-    setDoc, 
-    deleteDoc, 
-    getDoc, 
-    query, 
-    where, 
-    orderBy, 
-    runTransaction, 
+import {
+    collection,
+    getDocs,
+    doc,
+    setDoc,
+    deleteDoc,
+    getDoc,
+    query,
+    where,
+    orderBy,
+    runTransaction,
     addDoc,
-    Timestamp 
+    Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { showPopup, getFirestoreDb } from './utils.js';
 
@@ -34,7 +34,7 @@ const cashflowState = {
 const defaultCategories = [
     // Categorias de Despesas
     { id: 'rent', name: 'Aluguel', type: 'expense', icon: 'fas fa-home' },
-    { id: 'utilities', name: 'Contas (Luz, Água, Internet)', type: 'expense', icon: 'fas fa-bolt' },
+    { id: 'utilities', name: 'Contas (Luz, Água, Internet )', type: 'expense', icon: 'fas fa-bolt' },
     { id: 'salaries', name: 'Salários', type: 'expense', icon: 'fas fa-users' },
     { id: 'supplies', name: 'Materiais e Suprimentos', type: 'expense', icon: 'fas fa-box' },
     { id: 'marketing', name: 'Marketing', type: 'expense', icon: 'fas fa-bullhorn' },
@@ -615,6 +615,10 @@ function renderTransactions(transactionsToRender) {
         let translatedSource = transaction.source;
         if (transaction.source === 'appointment_completed') {
             translatedSource = 'Serviço Realizado';
+        } else if (transaction.source === 'stock_entry') {
+            translatedSource = 'Entrada de Estoque';
+        } else if (transaction.source === 'stock_exit') {
+            translatedSource = 'Saída de Estoque';
         }
         
         const formattedDueDate = transaction.dueDate ? new Date(transaction.dueDate + 'T00:00:00').toLocaleDateString('pt-BR') : null;
